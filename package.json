@@ -1,0 +1,47 @@
+{
+  "name": "devportfolio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Generate a living portfolio (README sections, JSON Resume, PDF CV, SVG cards) from your GitHub activity.",
+  "license": "Apache-2.0",
+  "author": "Abdullah Bakir <abdullah.bakir.1997@gmail.com>",
+  "homepage": "https://github.com/AbdullahBakir97/devportfolio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdullahBakir97/devportfolio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AbdullahBakir97/devportfolio/issues"
+  },
+  "engines": {
+    "node": ">=20.18.0",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "bundle": "pnpm --filter @devportfolio/action run bundle",
+    "verify-dist": "pnpm bundle && git diff --quiet dist/ || (echo 'dist/ is out of date — run pnpm bundle and commit' && exit 1)",
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm bundle",
+    "changeset": "changeset",
+    "release": "changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@changesets/cli": "2.27.11",
+    "@types/node": "20.17.10",
+    "turbo": "2.3.3",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "zod": "3.25.76"
+    }
+  }
+}

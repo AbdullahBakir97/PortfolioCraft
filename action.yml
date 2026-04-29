@@ -1,0 +1,75 @@
+name: 'DevPortfolio'
+description: 'Generate a living portfolio (README sections, JSON Resume, PDF CV, SVG cards) from your GitHub activity.'
+author: 'Abdullah Bakir'
+branding:
+  icon: 'user'
+  color: 'purple'
+
+inputs:
+  token:
+    description: 'GitHub token used for API requests. `secrets.GITHUB_TOKEN` is enough for public-repo data; use a PAT for private signal.'
+    required: true
+  user:
+    description: 'GitHub login to profile. Defaults to the token owner.'
+    required: false
+    default: ''
+  sections:
+    description: 'Comma-separated README sections to generate. Order is preserved.'
+    required: false
+    default: 'header,stack,projects,activity'
+  locale:
+    description: 'Locale for templates (en, ar).'
+    required: false
+    default: 'en'
+  output-readme:
+    description: 'Path to the README to update between markers. Set to empty string to skip.'
+    required: false
+    default: 'README.md'
+  output-json:
+    description: 'Path to write JSON Resume (schemaVersion 1.0.0). Set to empty string to skip.'
+    required: false
+    default: 'profile.json'
+  output-pdf:
+    description: 'Path to write the PDF CV. Set to empty string to skip.'
+    required: false
+    default: 'cv.pdf'
+  output-svg-dir:
+    description: 'Directory to write SVG stat cards. Set to empty string to skip.'
+    required: false
+    default: 'assets/cards'
+  config-file:
+    description: 'Optional YAML config file to override defaults.'
+    required: false
+    default: '.devportfolio.yml'
+  commit:
+    description: 'Whether to commit generated artifacts back to the repository.'
+    required: false
+    default: 'true'
+  commit-message:
+    description: 'Commit message used when committing artifacts.'
+    required: false
+    default: 'chore: refresh portfolio'
+  dry-run:
+    description: 'Run end-to-end without writing files or committing. Useful for previewing.'
+    required: false
+    default: 'false'
+  explain:
+    description: 'Print the scoring/classification reasoning to the job log.'
+    required: false
+    default: 'false'
+
+outputs:
+  readme-updated:
+    description: 'true if the README was changed by this run.'
+  json-path:
+    description: 'Path of the generated JSON Resume file.'
+  pdf-path:
+    description: 'Path of the generated PDF CV.'
+  cards-dir:
+    description: 'Directory containing generated SVG cards.'
+  summary:
+    description: 'One-line summary of the generated portfolio.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

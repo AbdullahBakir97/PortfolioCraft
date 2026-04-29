@@ -1,0 +1,6 @@
+<% const top = it.report.stack.slice(0, 8); %>#### Stack
+
+| Language | Tier | Score |
+| -------- | ---- | ----- |
+<% for (const s of top) { %>| <%= s.language %> | `<%= s.tier %>` | <%= s.score.toFixed(2) %> |
+<% } %>

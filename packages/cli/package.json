@@ -1,0 +1,27 @@
+{
+  "name": "devportfolio",
+  "version": "0.1.0",
+  "description": "Generate a living portfolio (README sections, JSON Resume, PDF CV, SVG cards) from your GitHub activity.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "devportfolio": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@devportfolio/core": "workspace:*",
+    "@devportfolio/renderers": "workspace:*",
+    "commander": "12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.10",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  }
+}

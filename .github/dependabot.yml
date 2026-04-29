@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      types:
+        patterns:
+          - '@types/*'
+      tooling:
+        patterns:
+          - 'turbo'
+          - '@biomejs/*'
+          - 'vitest'
+          - '@changesets/*'
+          - 'typescript'
+      runtime:
+        patterns:
+          - '@octokit/*'
+          - '@actions/*'
+          - 'zod'
+          - 'commander'
+          - 'eta'
+          - 'satori'
+          - '@resvg/*'
+          - '@react-pdf/*'
+          - 'pino'

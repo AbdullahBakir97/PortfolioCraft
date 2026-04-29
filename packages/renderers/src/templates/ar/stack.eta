@@ -1,0 +1,9 @@
+<% const top = it.report.stack.slice(0, 8); %><div dir="rtl">
+
+#### المهارات التقنية
+
+| اللغة | المستوى | النتيجة |
+| ----- | ------- | ------- |
+<% for (const s of top) { %>| <%= s.language %> | `<%= s.tier %>` | <%= s.score.toFixed(2) %> |
+<% } %>
+</div>

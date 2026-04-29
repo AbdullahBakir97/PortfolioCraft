@@ -1,0 +1,11 @@
+<%
+const u = it.report.snapshot.user;
+%><div dir="rtl">
+
+### <%= u.name ?? u.login %>
+
+<%= u.bio ?? '' %>
+
+<sub><%= u.publicRepos %> مستودع عام · <%= u.followers %> متابع · [@<%= u.login %>](https://github.com/<%= u.login %>)</sub>
+
+</div>

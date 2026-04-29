@@ -1,0 +1,7 @@
+<% const c = it.report.snapshot.contributions; %>#### Activity
+
+- **<%= c.totalCommits %>** commits
+- **<%= c.totalPRs %>** pull requests
+- **<%= c.totalReviews %>** reviews
+- **<%= c.totalIssues %>** issues opened
+- contributed to **<%= c.reposContributedTo %>** repositories

@@ -1,0 +1,4 @@
+#### Highlighted projects
+
+<% for (const p of it.report.projects) { %>- **[<%= p.repository.name %>](<%= p.repository.url %>)** — <%= p.repository.description ?? '' %> <sub>· `<%= p.domain %>` · ★ <%= p.repository.stargazerCount %></sub>
+<% } %>

@@ -1,0 +1,29 @@
+{
+  "name": "@devportfolio/action",
+  "version": "0.1.0",
+  "description": "DevPortfolio GitHub Action entrypoint.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "bundle": "pnpm build && ncc build dist/index.js -o ../../dist --minify --license licenses.txt --target es2022 && node ./scripts/copy-templates.mjs"
+  },
+  "dependencies": {
+    "@actions/cache": "4.0.0",
+    "@actions/core": "1.11.1",
+    "@actions/exec": "1.1.1",
+    "@actions/github": "6.0.0",
+    "@devportfolio/core": "workspace:*",
+    "@devportfolio/renderers": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.10",
+    "@vercel/ncc": "0.38.3",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  }
+}

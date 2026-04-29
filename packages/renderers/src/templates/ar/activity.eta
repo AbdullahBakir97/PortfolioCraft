@@ -1,0 +1,10 @@
+<% const c = it.report.snapshot.contributions; %><div dir="rtl">
+
+#### النشاط
+
+- **<%= c.totalCommits %>** التزام
+- **<%= c.totalPRs %>** طلب سحب
+- **<%= c.totalReviews %>** مراجعة
+- **<%= c.totalIssues %>** قضية مفتوحة
+- ساهم في **<%= c.reposContributedTo %>** مستودع
+</div>

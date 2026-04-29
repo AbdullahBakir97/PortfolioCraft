@@ -1,0 +1,33 @@
+---
+title: DevPortfolio
+description: Generate a living portfolio from your GitHub activity.
+template: splash
+hero:
+  title: DevPortfolio
+  tagline: A single workflow turns your GitHub activity into a README block, JSON Resume, PDF CV, and SVG stat cards.
+  actions:
+    - text: Quickstart
+      link: /quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: GitHub
+      link: https://github.com/AbdullahBakir97/devportfolio
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="README block" icon="document">
+    Idempotent generation between `<!-- DEVPORTFOLIO:START -->` markers.
+  </Card>
+  <Card title="JSON Resume" icon="seti:json">
+    `schemaVersion: "1.0.0"` — works with any JSON Resume tool.
+  </Card>
+  <Card title="PDF CV" icon="seti:pdf">
+    Rendered server-side with React-PDF; reproducible byte-for-byte.
+  </Card>
+  <Card title="SVG cards" icon="image">
+    Stack, projects, activity — embeddable anywhere images are.
+  </Card>
+</CardGrid>

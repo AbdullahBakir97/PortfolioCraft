@@ -1,0 +1,14 @@
+sections: [header, stack, projects, activity]
+locale: en
+filters:
+  exclude_archived: true
+  exclude_forks: true
+  exclude_topics: [tutorial, exercise, homework]
+  min_stars: 0
+weights:
+  loc: 0.5
+  recency: 0.3
+  maturity: 0.2
+projects:
+  pinned_first: true
+  max: 6
