@@ -56,8 +56,17 @@ export async function run(inputs: ActionInputs): Promise<RunResult> {
   }
 
   if (inputs.outputPdf && !inputs.dryRun) {
-    const buffer = await renderPdf({ report });
-    await writeFileEnsured(inputs.outputPdf, buffer);
+    try {
+      const buffer = await renderPdf({ report });
+      await writeFileEnsured(inputs.outputPdf, buffer);
+    } catch (err) {
+      // React-PDF needs its built-in AFM font metrics on disk; some bundled
+      // environments (notably ncc-bundled actions on Linux runners) strip
+      // them. Skip the artifact rather than failing the whole run — the
+      // README/JSON Resume outputs are independently useful.
+      const message = err instanceof Error ? err.message : String(err);
+      core.warning(`Skipping PDF: ${message}. See https://github.com/AbdullahBakir97/DevPortfolio/issues for font-bundling status.`);
+    }
   }
 
   if (inputs.outputSvgDir && !inputs.dryRun) {
