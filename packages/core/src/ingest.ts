@@ -3,6 +3,7 @@ import { classifyRepository } from './classification.js';
 import { applyFilters, keptRepos } from './filters.js';
 import type { GitHubClient } from './github.js';
 import type { Logger } from './logger.js';
+import { withRetry } from './retry.js';
 import type {
   ContributionSummary,
   PortfolioConfig,
@@ -146,7 +147,16 @@ export async function ingestSnapshot(opts: IngestOptions): Promise<Snapshot> {
     }
   }
 
-  const userResult = await client.graphql<UserAndReposGraphQL>(USER_QUERY, { login: user });
+  const userResult = await withRetry(
+    () => client.graphql<UserAndReposGraphQL>(USER_QUERY, { login: user }),
+    {
+      onRetry: (err, attempt, delay) =>
+        logger?.warn(
+          { user, attempt, delay, err: errLabel(err) },
+          'snapshot user-query: transient error, retrying',
+        ),
+    },
+  );
   const u = userResult.user;
   const profile: UserProfile = {
     login: u.login,
@@ -173,10 +183,20 @@ export async function ingestSnapshot(opts: IngestOptions): Promise<Snapshot> {
   let cursor: string | null = null;
   // bound the page count so a misbehaving GraphQL never spins forever
   for (let page = 0; page < 20; page += 1) {
-    const result: ReposPage = await client.graphql<ReposPage>(REPOS_QUERY, {
-      login: user,
-      cursor,
-    });
+    const result: ReposPage = await withRetry(
+      () =>
+        client.graphql<ReposPage>(REPOS_QUERY, {
+          login: user,
+          cursor,
+        }),
+      {
+        onRetry: (err, attempt, delay) =>
+          logger?.warn(
+            { user, page, attempt, delay, err: errLabel(err) },
+            'snapshot repos-query: transient error, retrying',
+          ),
+      },
+    );
     const conn = result.user.repositories;
     for (const node of conn.nodes) {
       repos.push(toRepository(node, pinnedSet));
@@ -274,6 +294,20 @@ function significanceCompare(a: ProjectEntry, b: ProjectEntry, pinnedFirst: bool
     return a.repository.isPinned ? -1 : 1;
   }
   return b.significance - a.significance;
+}
+
+/** Compact error description for retry-log lines. Avoids dumping the full
+ *  Octokit error chain (which can include the entire HTML 502 page). */
+function errLabel(err: unknown): string {
+  if (!err || typeof err !== 'object') return String(err);
+  const status = (err as { status?: number }).status;
+  const code = (err as { code?: string }).code;
+  const name = (err as { name?: string }).name;
+  if (typeof status === 'number') return `HTTP ${status}`;
+  if (typeof code === 'string') return code;
+  if (typeof name === 'string') return name;
+  const msg = (err as { message?: string }).message;
+  return typeof msg === 'string' ? msg.slice(0, 80) : 'unknown error';
 }
 
 function oneLineSummary(

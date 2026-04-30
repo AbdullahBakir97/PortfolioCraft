@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { Cache } from '../cache.js';
 import type { GitHubClient } from '../github.js';
 import type { Logger } from '../logger.js';
+import { withRetry } from '../retry.js';
 import type { Snapshot } from '../schemas.js';
 import { IssueLabel, PrTimelineSummary, RepoSignatureStats } from './schemas.js';
 
@@ -316,10 +317,20 @@ export async function ingestAuditExtras(opts: IngestAuditExtrasOptions): Promise
   const perRepo = new Map<string, AuditExtrasForRepo>();
   let cursor: string | null = null;
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const result: RepoExtrasPage = await client.graphql<RepoExtrasPage>(REPO_EXTRAS_QUERY, {
-      login: user,
-      cursor,
-    });
+    const result: RepoExtrasPage = await withRetry(
+      () =>
+        client.graphql<RepoExtrasPage>(REPO_EXTRAS_QUERY, {
+          login: user,
+          cursor,
+        }),
+      {
+        onRetry: (err, attempt, delay) =>
+          logger?.warn(
+            { user, page, attempt, delay },
+            `audit-extras repo-page transient error: ${(err as Error).message?.slice(0, 80) ?? 'unknown'}`,
+          ),
+      },
+    );
     const conn = result.user.repositories;
     for (const node of conn.nodes) {
       const extras = toRepoExtras(node, logger);
@@ -331,9 +342,19 @@ export async function ingestAuditExtras(opts: IngestAuditExtrasOptions): Promise
   }
 
   const searchQuery = `is:open is:pr author:${user}`;
-  const prResult = await client.graphql<UserPRSearchResult>(USER_OPEN_PRS_QUERY, {
-    q: searchQuery,
-  });
+  const prResult = await withRetry(
+    () =>
+      client.graphql<UserPRSearchResult>(USER_OPEN_PRS_QUERY, {
+        q: searchQuery,
+      }),
+    {
+      onRetry: (err, attempt, delay) =>
+        logger?.warn(
+          { user, attempt, delay },
+          `audit-extras pr-search transient error: ${(err as Error).message?.slice(0, 80) ?? 'unknown'}`,
+        ),
+    },
+  );
   const userOpenPRs: UserOpenPR[] = [];
   for (const raw of prResult.search.nodes) {
     const candidate = raw as {
@@ -381,11 +402,18 @@ export async function ingestAuditExtras(opts: IngestAuditExtrasOptions): Promise
     const owner = pr.repository.slice(0, slash);
     const name = pr.repository.slice(slash + 1);
     try {
-      const timelineRes = await client.graphql<PrTimelineResult>(PR_TIMELINE_QUERY, {
-        owner,
-        name,
-        number: pr.number,
-      });
+      const timelineRes = await withRetry(
+        () =>
+          client.graphql<PrTimelineResult>(PR_TIMELINE_QUERY, {
+            owner,
+            name,
+            number: pr.number,
+          }),
+        // Per-PR timeline is best-effort; the existing try/catch around
+        // this block degrades to `timeline: null` if retries also fail.
+        // Cap retries to 2 so a brief outage doesn't 5x the run time.
+        { maxAttempts: 2 },
+      );
       const summary = computePrTimelineSummary(timelineRes, user, pr.createdAt);
       userOpenPRs[i] = { ...pr, timeline: summary };
     } catch (err) {
