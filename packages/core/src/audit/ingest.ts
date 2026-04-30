@@ -3,6 +3,7 @@ import type { Cache } from '../cache.js';
 import type { GitHubClient } from '../github.js';
 import type { Logger } from '../logger.js';
 import type { Snapshot } from '../schemas.js';
+import { IssueLabel, PrTimelineSummary, RepoSignatureStats } from './schemas.js';
 
 /**
  * Audit-extras cache TTL. Six hours: long enough that a typical CI run hits
@@ -19,6 +20,16 @@ const MAX_PAGES = 20;
 const REPOS_PAGE_SIZE = 50;
 const SEARCH_PAGE_SIZE = 50;
 
+// v0.3: per-repo enrichment. We sample the last 100 commits to derive
+// signature ratios + author-email diversity, and the most recent 25 open
+// issues to weight bug-debt by label.
+const COMMIT_HISTORY_SAMPLE = 100;
+const ISSUE_LABEL_SAMPLE = 25;
+const ISSUE_LABEL_PAGE = 10;
+// v0.3: per-PR timeline ceiling. Matches the 50 PR cap on userOpenPRs to
+// keep cold-cache cost <= 150 GraphQL calls per audit.
+const PR_TIMELINE_LIMIT = 50;
+
 // ---------------------------------------------------------------------------
 // Boundary schemas — what we promise to hand to the checks layer.
 // ---------------------------------------------------------------------------
@@ -30,6 +41,12 @@ export const AuditExtrasForRepo = z.object({
   topLevelEntries: z.array(z.string()).default([]),
   openIssuesCount: z.number().int().nonnegative(),
   oldestOpenIssueAt: z.string().datetime().nullable(),
+  // v0.3: labels of recent open issues (sampled). Empty array when the
+  // labels query failed or no issues are open.
+  issueLabels: z.array(IssueLabel).default([]),
+  // v0.3: signature + author-email aggregates over the recent commit
+  // sample. `null` when commit history fetch fails or repo is empty.
+  signatureStats: RepoSignatureStats.nullable().default(null),
 });
 export type AuditExtrasForRepo = z.infer<typeof AuditExtrasForRepo>;
 
@@ -40,6 +57,9 @@ export const UserOpenPR = z.object({
   url: z.string().url(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  // v0.3: per-PR timeline summary. `null` when timeline fetch fails or
+  // when the PR was beyond the per-audit timeline cap.
+  timeline: PrTimelineSummary.nullable().default(null),
 });
 export type UserOpenPR = z.infer<typeof UserOpenPR>;
 
@@ -72,8 +92,17 @@ interface RepoExtrasNode {
   licenseInfo: { spdxId: string | null } | null;
   defaultBranchRef: {
     target: {
-      // Commits expose `tree`. Tags / non-Commit targets won't, so we narrow.
+      // Commits expose `tree` and `history`. Tags / non-Commit targets
+      // won't expose these, so the query inlines them on `... on Commit`.
       tree?: { entries: Array<{ name: string; type: string }> | null } | null;
+      history?: {
+        totalCount?: number;
+        nodes: Array<{
+          committedDate: string;
+          author: { email: string | null } | null;
+          signature: { isValid: boolean | null } | null;
+        }> | null;
+      } | null;
     } | null;
   } | null;
   // GraphQL `object(expression: "HEAD:README.md")` returns an opaque GitObject
@@ -83,6 +112,38 @@ interface RepoExtrasNode {
     totalCount: number;
     nodes: Array<{ createdAt: string }> | null;
   };
+  // v0.3: a second `issues` connection scoped to recent open issues with
+  // their labels. Aliased in the GraphQL query as `recentIssues`.
+  recentIssues: {
+    nodes: Array<{
+      labels: { nodes: Array<{ name: string; color: string | null }> | null } | null;
+    }> | null;
+  };
+}
+
+// v0.3: per-PR timeline node shapes. Only the unioned cases we ask for are
+// modeled; everything else flows through as `__typename` only.
+interface PrTimelineNodeBase {
+  __typename: string;
+}
+interface PrTimelineActorNode extends PrTimelineNodeBase {
+  // IssueComment / PullRequestReview use `author`; ReviewRequestedEvent uses
+  // `actor`. Both ultimately give us a login.
+  author?: { login: string } | null;
+  actor?: { login: string } | null;
+  createdAt?: string;
+  state?: string;
+}
+
+interface PrTimelineResult {
+  repository: {
+    pullRequest: {
+      timelineItems: {
+        totalCount: number;
+        nodes: Array<PrTimelineActorNode | PrTimelineNodeBase> | null;
+      };
+    } | null;
+  } | null;
 }
 
 interface RepoExtrasPage {
@@ -130,6 +191,14 @@ const REPO_EXTRAS_QUERY = /* GraphQL */ `
             target {
               ... on Commit {
                 tree { entries { name type } }
+                history(first: ${COMMIT_HISTORY_SAMPLE}) {
+                  totalCount
+                  nodes {
+                    committedDate
+                    author { email }
+                    signature { isValid }
+                  }
+                }
               }
             }
           }
@@ -137,6 +206,57 @@ const REPO_EXTRAS_QUERY = /* GraphQL */ `
           issues(states: OPEN, first: 1, orderBy: { field: CREATED_AT, direction: ASC }) {
             totalCount
             nodes { createdAt }
+          }
+          recentIssues: issues(
+            states: OPEN
+            first: ${ISSUE_LABEL_SAMPLE}
+            orderBy: { field: CREATED_AT, direction: DESC }
+          ) {
+            nodes {
+              labels(first: ${ISSUE_LABEL_PAGE}) {
+                nodes { name color }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// v0.3: per-PR timeline. Only the event types that actually move the
+// "who's waiting on whom" needle: review, comment, review request,
+// reopen/close.
+const PR_TIMELINE_QUERY = /* GraphQL */ `
+  query DPPrTimeline($owner: String!, $name: String!, $number: Int!) {
+    repository(owner: $owner, name: $name) {
+      pullRequest(number: $number) {
+        timelineItems(
+          last: 30
+          itemTypes: [
+            PULL_REQUEST_REVIEW
+            ISSUE_COMMENT
+            REVIEW_REQUESTED_EVENT
+            REOPENED_EVENT
+            CLOSED_EVENT
+          ]
+        ) {
+          totalCount
+          nodes {
+            __typename
+            ... on IssueComment {
+              author { login }
+              createdAt
+            }
+            ... on PullRequestReview {
+              author { login }
+              createdAt
+              state
+            }
+            ... on ReviewRequestedEvent {
+              actor { login }
+              createdAt
+            }
           }
         }
       }
@@ -202,7 +322,7 @@ export async function ingestAuditExtras(opts: IngestAuditExtrasOptions): Promise
     });
     const conn = result.user.repositories;
     for (const node of conn.nodes) {
-      const extras = toRepoExtras(node);
+      const extras = toRepoExtras(node, logger);
       const validated = AuditExtrasForRepo.parse(extras);
       perRepo.set(validated.nameWithOwner, validated);
     }
@@ -248,6 +368,34 @@ export async function ingestAuditExtras(opts: IngestAuditExtrasOptions): Promise
     userOpenPRs.push(validated);
   }
 
+  // v0.3: enrich each open PR with its timeline summary. Bounded to
+  // PR_TIMELINE_LIMIT to keep cold-cache cost predictable. Each call is
+  // independently try/caught so a single 404/network failure can't poison
+  // the whole batch.
+  const prTimelineCap = Math.min(userOpenPRs.length, PR_TIMELINE_LIMIT);
+  for (let i = 0; i < prTimelineCap; i += 1) {
+    const pr = userOpenPRs[i];
+    if (!pr) continue;
+    const slash = pr.repository.indexOf('/');
+    if (slash <= 0) continue;
+    const owner = pr.repository.slice(0, slash);
+    const name = pr.repository.slice(slash + 1);
+    try {
+      const timelineRes = await client.graphql<PrTimelineResult>(PR_TIMELINE_QUERY, {
+        owner,
+        name,
+        number: pr.number,
+      });
+      const summary = computePrTimelineSummary(timelineRes, user, pr.createdAt);
+      userOpenPRs[i] = { ...pr, timeline: summary };
+    } catch (err) {
+      logger?.warn(
+        { user, pr: `${pr.repository}#${pr.number}`, err: (err as Error).message },
+        'audit-extras: PR timeline fetch failed; falling back to null',
+      );
+    }
+  }
+
   const extras: AuditExtras = { perRepo, userOpenPRs };
 
   if (cache && cacheKey) {
@@ -261,10 +409,33 @@ export async function ingestAuditExtras(opts: IngestAuditExtrasOptions): Promise
   return extras;
 }
 
-function toRepoExtras(node: RepoExtrasNode): AuditExtrasForRepo {
+function toRepoExtras(node: RepoExtrasNode, logger?: Logger): AuditExtrasForRepo {
   const tree = node.defaultBranchRef?.target?.tree;
   const topLevelEntries = tree?.entries ? tree.entries.map((e) => e.name) : [];
   const oldestOpenIssue = node.issues.nodes?.[0];
+
+  let signatureStats: RepoSignatureStats | null = null;
+  try {
+    signatureStats = computeSignatureStats(node);
+  } catch (err) {
+    logger?.warn(
+      { repo: node.nameWithOwner, err: (err as Error).message },
+      'audit-extras: signature stats compute failed; falling back to null',
+    );
+    signatureStats = null;
+  }
+
+  let issueLabels: ReturnType<typeof collectIssueLabels> = [];
+  try {
+    issueLabels = collectIssueLabels(node);
+  } catch (err) {
+    logger?.warn(
+      { repo: node.nameWithOwner, err: (err as Error).message },
+      'audit-extras: issue-label collect failed; falling back to []',
+    );
+    issueLabels = [];
+  }
+
   return {
     nameWithOwner: node.nameWithOwner,
     licenseSpdx: node.licenseInfo?.spdxId ?? null,
@@ -272,5 +443,99 @@ function toRepoExtras(node: RepoExtrasNode): AuditExtrasForRepo {
     topLevelEntries,
     openIssuesCount: node.issues.totalCount,
     oldestOpenIssueAt: oldestOpenIssue?.createdAt ?? null,
+    issueLabels,
+    signatureStats,
+  };
+}
+
+function computeSignatureStats(node: RepoExtrasNode): RepoSignatureStats | null {
+  const history = node.defaultBranchRef?.target?.history;
+  const nodes = history?.nodes ?? null;
+  if (!nodes || nodes.length === 0) return null;
+
+  let totalCommits = 0;
+  let signedCommits = 0;
+  const emails = new Set<string>();
+  for (const commit of nodes) {
+    if (!commit) continue;
+    totalCommits += 1;
+    if (commit.signature?.isValid === true) signedCommits += 1;
+    const email = commit.author?.email;
+    if (typeof email === 'string' && email.length > 0) {
+      emails.add(email);
+    }
+  }
+  if (totalCommits === 0) return null;
+  const signatureRatio = signedCommits / totalCommits;
+  return {
+    totalCommits,
+    signedCommits,
+    signatureRatio,
+    uniqueAuthorEmails: Array.from(emails).sort(),
+  };
+}
+
+function collectIssueLabels(node: RepoExtrasNode): IssueLabel[] {
+  const issues = node.recentIssues?.nodes ?? null;
+  if (!issues) return [];
+  const out: IssueLabel[] = [];
+  const seen = new Set<string>();
+  for (const issue of issues) {
+    const labels = issue?.labels?.nodes;
+    if (!labels) continue;
+    for (const label of labels) {
+      if (!label) continue;
+      const key = `${label.name} ${label.color ?? ''}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ name: label.name, color: label.color ?? null });
+    }
+  }
+  return out;
+}
+
+function computePrTimelineSummary(
+  result: PrTimelineResult,
+  user: string,
+  fallbackCreatedAt: string,
+): PrTimelineSummary {
+  const items = result.repository?.pullRequest?.timelineItems;
+  const totalCount = items?.totalCount ?? 0;
+  const nodes = items?.nodes ?? [];
+
+  let latestAtMs = -Infinity;
+  let latestActor: string | null = null;
+  for (const raw of nodes) {
+    if (!raw) continue;
+    const node = raw as PrTimelineActorNode;
+    const createdAt = node.createdAt;
+    if (typeof createdAt !== 'string') continue;
+    const ms = Date.parse(createdAt);
+    if (!Number.isFinite(ms)) continue;
+    if (ms <= latestAtMs) continue;
+    latestAtMs = ms;
+    const login = node.author?.login ?? node.actor?.login ?? null;
+    latestActor = typeof login === 'string' && login.length > 0 ? login : null;
+  }
+
+  if (latestAtMs === -Infinity) {
+    return {
+      lastActorRole: 'unknown',
+      lastEventAt: fallbackCreatedAt,
+      eventCount: totalCount,
+    };
+  }
+
+  const role: PrTimelineSummary['lastActorRole'] =
+    latestActor === null
+      ? 'unknown'
+      : latestActor.toLowerCase() === user.toLowerCase()
+        ? 'author'
+        : 'reviewer';
+
+  return {
+    lastActorRole: role,
+    lastEventAt: new Date(latestAtMs).toISOString(),
+    eventCount: totalCount,
   };
 }

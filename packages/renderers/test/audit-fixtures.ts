@@ -47,10 +47,17 @@ export function report(over: Partial<AuditReport> = {}): AuditReport {
         'bug-debt': 0,
         archived: 0,
         'archive-suggestion': 0,
+        // v0.3 added category — must be present so callers that don't
+        // override `summary` still have a complete byCategory map.
+        'unverified-employer-context': 0,
       },
       bugDebtScore: 0,
       reposScanned: 1,
       reposWithFindings: findings.length === 0 ? 0 : 1,
+      // v0.3 added field — null means "no repos with usable signature
+      // stats"; tests that exercise the verified-signal section override
+      // this explicitly.
+      verifiedSignatureRatio: null,
     },
     findings,
     thresholds: {
