@@ -1,5 +1,5 @@
 import type { PortfolioReport } from '@portfoliocraft/core';
-import { Document, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
+import { Document, Page, renderToBuffer, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { createElement } from 'react';
 
 const styles = StyleSheet.create({

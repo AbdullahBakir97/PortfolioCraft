@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { prRotCheck } from '../../../src/audit/checks/pr-rot.js';
-import { NOW, auditCtx, userPR } from '../fixtures.js';
+import { auditCtx, NOW, userPR } from '../fixtures.js';
 
 const MS_PER_DAY = 86_400_000;
 

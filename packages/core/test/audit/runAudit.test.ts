@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type AuditConfig, type AuditExtras, runAudit } from '../../src/audit/index.js';
-import { NOW, extrasFor, repo, snapshotWith } from './fixtures.js';
+import { extrasFor, NOW, repo, snapshotWith } from './fixtures.js';
 
 const MS_PER_DAY = 86_400_000;
 

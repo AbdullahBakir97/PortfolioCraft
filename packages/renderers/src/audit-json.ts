@@ -1,5 +1,5 @@
-import { AuditReport } from '@portfoliocraft/core';
 import type { AuditReport as AuditReportType } from '@portfoliocraft/core';
+import { AuditReport } from '@portfoliocraft/core';
 
 /**
  * Validate the report through the Zod schema (which also strips unknown

@@ -4,10 +4,8 @@ import { dirname } from 'node:path';
 import {
   type AuditFinding,
   type AuditReport,
-  type Category,
-  SEVERITY_RANK,
-  type Severity,
   buildReport,
+  type Category,
   createGitHubClient,
   createLogger,
   ingestAuditExtras,
@@ -16,6 +14,8 @@ import {
   memoryCache,
   mergeConfigWithInputs,
   runAudit,
+  SEVERITY_RANK,
+  type Severity,
 } from '@portfoliocraft/core';
 import {
   applyMarkers,

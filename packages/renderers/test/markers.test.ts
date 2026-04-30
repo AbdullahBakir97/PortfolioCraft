@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { END_MARKER, START_MARKER, applyMarkers } from '../src/markers.js';
+import { applyMarkers, END_MARKER, START_MARKER } from '../src/markers.js';
 
 describe('applyMarkers', () => {
   it('replaces only the marker block', () => {

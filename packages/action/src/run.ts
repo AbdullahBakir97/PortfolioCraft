@@ -5,8 +5,6 @@ import { context } from '@actions/github';
 import {
   type ActionInputs,
   type AuditReport,
-  SEVERITY_RANK,
-  type Severity,
   buildReport,
   createGitHubClient,
   createLogger,
@@ -16,6 +14,8 @@ import {
   memoryCache,
   mergeConfigWithInputs,
   runAudit,
+  SEVERITY_RANK,
+  type Severity,
 } from '@portfoliocraft/core';
 import {
   applyAuditMarkers,
