@@ -21,8 +21,68 @@ export const Category = z.enum([
   'bug-debt',
   'archived',
   'archive-suggestion',
+  // v0.3: emitted when an item references an employer / sponsor / job-title
+  // that the audit cannot back with a verifiable signal (timeline, label,
+  // signature, or ownership claim).
+  'unverified-employer-context',
 ]);
 export type Category = z.infer<typeof Category>;
+
+// ---------------------------------------------------------------------------
+// v0.3 — verifiable-signal supporting types. These are additive to v0.2; old
+// cached audit-extras snapshots still validate because every new field uses
+// `.default(...)` (or `.nullable().default(null)`).
+// ---------------------------------------------------------------------------
+
+export const IssueLabel = z.object({
+  name: z.string(),
+  color: z.string().nullable().default(null),
+});
+export type IssueLabel = z.infer<typeof IssueLabel>;
+
+export const RepoSignatureStats = z.object({
+  totalCommits: z.number().int().nonnegative(),
+  signedCommits: z.number().int().nonnegative(),
+  // ratio is signedCommits/totalCommits when totalCommits > 0, else 0.
+  signatureRatio: z.number().min(0).max(1),
+  uniqueAuthorEmails: z.array(z.string()).default([]),
+});
+export type RepoSignatureStats = z.infer<typeof RepoSignatureStats>;
+
+export const PrTimelineSummary = z.object({
+  // 'author' = the audited user spoke last; 'reviewer' = anyone else;
+  // 'unknown' = no events / no actor available.
+  lastActorRole: z.enum(['author', 'reviewer', 'unknown']),
+  lastEventAt: z.string().datetime(),
+  eventCount: z.number().int().nonnegative(),
+});
+export type PrTimelineSummary = z.infer<typeof PrTimelineSummary>;
+
+/**
+ * Bug-debt label weights consumed by the v0.3 bug-debt check.
+ *
+ * Match case-insensitively against `IssueLabel.name`. An untyped issue (no
+ * matching label) gets multiplier 1.0. When multiple labels match, the check
+ * MUST take the maximum (so 'bug' + 'documentation' → 2.0, not 1.25). The
+ * weight is then a per-issue debt multiplier.
+ */
+export const LABEL_WEIGHTS: Record<string, number> = {
+  'severity:critical': 4,
+  'severity:high': 3,
+  'severity:medium': 1,
+  'severity:low': 0.5,
+  critical: 4,
+  high: 3,
+  'priority: high': 3,
+  bug: 2,
+  defect: 2,
+  regression: 2,
+  enhancement: 0.5,
+  'feature-request': 0.5,
+  question: 0.25,
+  documentation: 0.5,
+  docs: 0.5,
+};
 
 /**
  * Severity ordering used by the renderer + composeFindings sort. Higher number
@@ -112,6 +172,10 @@ export const AuditSummary = z.object({
   bugDebtScore: z.number().nonnegative(),
   reposScanned: z.number().int().nonnegative(),
   reposWithFindings: z.number().int().nonnegative(),
+  // v0.3: average signatureRatio across `extras.perRepo` entries with a
+  // non-null signatureStats. `null` when no repo had a usable
+  // signature-stats payload (empty user / all fetches failed).
+  verifiedSignatureRatio: z.number().min(0).max(1).nullable().default(null),
 });
 export type AuditSummary = z.infer<typeof AuditSummary>;
 

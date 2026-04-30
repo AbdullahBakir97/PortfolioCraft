@@ -3,6 +3,7 @@ import { archiveSuggestionCheck } from './checks/archive-suggestion.js';
 import { archivedCheck } from './checks/archived.js';
 import { bugDebtCheck } from './checks/bug-debt.js';
 import { docsCheck } from './checks/docs.js';
+import { employerVerifiedContextCheck } from './checks/employer-verified-context.js';
 import { licenseCheck } from './checks/license.js';
 import { prRotCheck } from './checks/pr-rot.js';
 import { staleCheck } from './checks/stale.js';
@@ -59,10 +60,11 @@ export async function runAudit(opts: RunAuditOptions): Promise<AuditReport> {
     bugDebtCheck,
     archivedCheck,
     archiveSuggestionCheck,
+    employerVerifiedContextCheck, // v0.3 added
   ];
 
   const findings = composeFindings(checks, ctx, config.ignore);
-  const summary = summarize(findings, snapshot);
+  const summary = summarize(findings, snapshot, extras);
 
   return {
     schemaVersion: AUDIT_SCHEMA_VERSION,
@@ -146,7 +148,11 @@ function compileRepoGlob(pattern: string): (input: string) => boolean {
   return (input) => regex.test(input);
 }
 
-function summarize(findings: AuditFinding[], snapshot: Snapshot): AuditSummary {
+function summarize(
+  findings: AuditFinding[],
+  snapshot: Snapshot,
+  extras: AuditExtras,
+): AuditSummary {
   const bySeverity: Record<Severity, number> = {
     critical: 0,
     high: 0,
@@ -163,6 +169,7 @@ function summarize(findings: AuditFinding[], snapshot: Snapshot): AuditSummary {
     'bug-debt': 0,
     archived: 0,
     'archive-suggestion': 0,
+    'unverified-employer-context': 0,
   };
 
   const reposWithFindings = new Set<string>();
@@ -182,6 +189,17 @@ function summarize(findings: AuditFinding[], snapshot: Snapshot): AuditSummary {
     }
   }
 
+  // v0.3: average signatureRatio across repos that produced a non-null
+  // signatureStats payload. `null` when no repo had usable signature data.
+  let signatureSum = 0;
+  let signatureCount = 0;
+  for (const repoExtras of extras.perRepo.values()) {
+    if (!repoExtras.signatureStats) continue;
+    signatureSum += repoExtras.signatureStats.signatureRatio;
+    signatureCount += 1;
+  }
+  const verifiedSignatureRatio = signatureCount === 0 ? null : signatureSum / signatureCount;
+
   return {
     totalFindings: findings.length,
     bySeverity,
@@ -189,5 +207,6 @@ function summarize(findings: AuditFinding[], snapshot: Snapshot): AuditSummary {
     bugDebtScore,
     reposScanned: snapshot.repositories.length,
     reposWithFindings: reposWithFindings.size,
+    verifiedSignatureRatio,
   };
 }

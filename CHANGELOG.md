@@ -5,6 +5,36 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-04-30
+
+Verifiable signal. Replaces v0.2's age-based heuristics with timeline / label / signature evidence. Additive — existing v0.1 / v0.2 workflows continue working unchanged.
+
+### Changed
+- **`pr-rot`** now classifies by who's awaiting whom via per-PR timeline introspection. Severity matrix:
+  - reviewer-waiting → `low` (informational, not author's responsibility)
+  - author-waiting + age > 30 days → `medium`
+  - author-waiting + age > 90 days → `high`
+  - timeline data unavailable → falls back to v0.2 age-only behavior
+- **`bug-debt`** now weights by GitHub issue labels (`severity:critical` × 4, `severity:high` × 3, `bug` × 2, `enhancement` × 0.5, etc.). The threshold (`bug-debt-warn`) now applies to `weightedDebtScore`. The legacy `debtScore` is preserved in finding metadata for backward compat.
+
+### Added
+- New finding category `'unverified-employer-context'` (severity `info`). Heuristic check on user.bio company claim vs commit email domains, plus average commit signature ratio. Skips silently if no employer hint is parseable from the profile.
+- New `summary.verifiedSignatureRatio` field on `AuditReport` — average commit signature ratio across all repos with stats. `null` when no repos have commit history.
+- New CLI flag `--verified-only` filters findings to `unverified-employer-context` and bug-debt with label-multiplier ≥ 2. Stacks with `--severity`.
+- New audit Markdown sections in renderer: a `### Verified signal` block (omitted when ratio is null), per-finding label-multiplier line on bug-debt, per-finding awaiting-role line on pr-rot.
+- New per-PR GraphQL timeline ingest (bounded to first 50 open PRs, individually try/caught — failures fall back to v0.2 behavior gracefully).
+- New per-repo GraphQL extras: 100-commit signature history + 25-issue label sample.
+
+### Quality
+- 80.8% statement coverage / 72.4% branch coverage on `packages/core/src/audit/` overall (above the 80% statement target). 99.5% on `src/audit/checks/` specifically.
+- 147 tests across the audit suite (+56 over v0.2). Property test guards label-weight order independence.
+- Backward-compat preserved: v0.2 cached snapshots still parse — every new field has a Zod `.default(...)` fallback. v0.2 fixtures carrying older AuditReport shapes get the v0.3 fields filled in transparently.
+
+### Notes
+- No new GitHub token scopes required — `public_repo` + `read:user` still sufficient. Audit data never leaves the runner.
+- The Action surface (`action.yml` inputs) is **unchanged** in v0.3. The `--verified-only` filter is CLI-only; the Action consumes the unfiltered report.
+- Performance: cold-cache audit makes ~85 + ~50 GraphQL calls (repos + PRs). 6h cache hits drop daily dogfood to zero API calls.
+
 ## [0.2.0] — 2026-04-30
 
 Self-awareness audit subcommand. Additive to v0.1; existing `mode: portfolio` (default) is unchanged.
@@ -54,5 +84,6 @@ Initial release.
 ### Security
 - Action requests minimum scopes: `public_repo` and `read:user`. No data leaves the runner.
 
+[0.3.0]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.3.0
 [0.2.0]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.2.0
 [0.1.0]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.1.0

@@ -31,7 +31,7 @@ const program = new Command();
 program
   .name('portfoliocraft')
   .description('Generate a living portfolio from your GitHub activity')
-  .version('0.2.0');
+  .version('0.3.0');
 
 program
   .command('generate')
@@ -110,6 +110,15 @@ program
   .option('--md <path>', 'Markdown audit output path', 'audit.md')
   .option('--json <path>', 'JSON audit output path', 'audit.json')
   .option('--severity <level>', 'Minimum severity to include (info|low|medium|high|critical)', '')
+  // v0.3: --verified-only narrows the report to the verifiable-signal slice —
+  // unverified employer context findings plus bug-debt findings whose label
+  // multiplier shows GitHub itself classified the issue as a real bug. It
+  // stacks with --severity (both filters apply when both are passed).
+  .option(
+    '--verified-only',
+    'Only include findings backed by verifiable signal (unverified-employer-context, or bug-debt with labelMultiplier >= 2)',
+    false,
+  )
   .option('--dry-run', 'Run without writing files', false)
   .option('--explain', 'Print summary and top findings to stderr', false)
   .action(async (opts) => {
@@ -146,7 +155,15 @@ program
     // a presentation knob; filtering on the way out keeps the JSON artifact
     // and the Markdown summary internally consistent without re-running
     // checks or mutating runAudit's contract.
-    const report = filterReportBySeverity(baseReport, opts.severity as Severity | '');
+    //
+    // --verified-only is the same shape — a presentation-time slice — and
+    // stacks: severity floor first (cheap, drops the most), then verified
+    // gate. Order doesn't change the output (filters are commutative) but
+    // is cheaper this way.
+    const severityFiltered = filterReportBySeverity(baseReport, opts.severity as Severity | '');
+    const report = opts.verifiedOnly
+      ? filterReportByVerifiedOnly(severityFiltered)
+      : severityFiltered;
 
     if (opts.explain) {
       printExplain(report);
@@ -189,7 +206,46 @@ function filterReportBySeverity(report: AuditReport, threshold: Severity | ''): 
   if (threshold === '') return report;
   const floor = SEVERITY_RANK[threshold];
   const findings = report.findings.filter((f: AuditFinding) => SEVERITY_RANK[f.severity] >= floor);
+  return reaggregateReport(report, findings);
+}
 
+/**
+ * v0.3: keep only findings backed by verifiable signal — unverified-employer
+ * -context (the audit explicitly couldn't back a claim) plus bug-debt findings
+ * whose `metadata.labelMultiplier` is >= 2 (i.e. GitHub's own labeling
+ * confirms it's a real bug, not a feature request mis-tagged as an issue).
+ *
+ * Re-aggregates the same summary fields as `filterReportBySeverity` so the
+ * rendered Markdown and serialized JSON stay internally consistent.
+ */
+function filterReportByVerifiedOnly(report: AuditReport): AuditReport {
+  const findings = report.findings.filter((f: AuditFinding) => isVerifiedFinding(f));
+  return reaggregateReport(report, findings);
+}
+
+/**
+ * Predicate for the --verified-only filter. Pulled out as a named function so
+ * the contract (verbatim from agent 3's spec) is easy to grep for and unit-
+ * test in isolation later.
+ */
+function isVerifiedFinding(f: AuditFinding): boolean {
+  if (f.category === 'unverified-employer-context') return true;
+  if (f.category === 'bug-debt') {
+    const raw = f.metadata.labelMultiplier;
+    if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 2) return true;
+  }
+  return false;
+}
+
+/**
+ * Build a fresh report with the supplied findings list and re-derived summary
+ * counters. Shared by both --severity and --verified-only so a future filter
+ * can plug in without re-implementing aggregation. Does NOT recompute
+ * `verifiedSignatureRatio` — that's a perRepo-level signal whose source data
+ * (signatureStats) lives outside the findings array, so filtering findings
+ * mustn't change it.
+ */
+function reaggregateReport(report: AuditReport, findings: AuditFinding[]): AuditReport {
   const bySeverity: Record<Severity, number> = {
     critical: 0,
     high: 0,
@@ -206,6 +262,7 @@ function filterReportBySeverity(report: AuditReport, threshold: Severity | ''): 
     'bug-debt': 0,
     archived: 0,
     'archive-suggestion': 0,
+    'unverified-employer-context': 0,
   };
   const reposWithFindings = new Set<string>();
   let bugDebtScore = 0;
