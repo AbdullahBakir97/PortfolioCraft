@@ -12,4 +12,3 @@ if (!existsSync(src)) {
 }
 
 cpSync(src, dest, { recursive: true });
-console.log(`copied templates: ${src} -> ${dest}`);

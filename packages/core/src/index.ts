@@ -7,3 +7,4 @@ export * from './classification.js';
 export * from './cache.js';
 export * from './github.js';
 export * from './ingest.js';
+export * from './audit/index.js';

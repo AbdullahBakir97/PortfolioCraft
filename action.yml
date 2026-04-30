@@ -57,6 +57,22 @@ inputs:
     description: 'Print the scoring/classification reasoning to the job log.'
     required: false
     default: 'false'
+  mode:
+    description: "What to run: portfolio | audit | both. Default 'portfolio' is backward-compatible with v0.1."
+    required: false
+    default: 'portfolio'
+  audit-output-md:
+    description: 'Path to write the audit Markdown report. Empty string to skip.'
+    required: false
+    default: 'audit.md'
+  audit-output-json:
+    description: 'Path to write the audit JSON report. Empty string to skip.'
+    required: false
+    default: 'audit.json'
+  audit-fail-on:
+    description: 'Severity threshold that fails the run. Empty disables. Values: low | medium | high | critical.'
+    required: false
+    default: ''
 
 outputs:
   readme-updated:
@@ -69,6 +85,14 @@ outputs:
     description: 'Directory containing generated SVG cards.'
   summary:
     description: 'One-line summary of the generated portfolio.'
+  audit-md-path:
+    description: 'Path of the generated audit Markdown file.'
+  audit-json-path:
+    description: 'Path of the generated audit JSON file.'
+  audit-finding-count:
+    description: 'Total number of audit findings.'
+  audit-fail-on-result:
+    description: 'pass / fail / not-evaluated based on audit-fail-on.'
 
 runs:
   using: 'node20'

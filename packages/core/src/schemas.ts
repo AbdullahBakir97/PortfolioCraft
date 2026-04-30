@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AuditConfig, Severity } from './audit/schemas.js';
 
 export const Locale = z.enum(['en', 'ar']);
 export type Locale = z.infer<typeof Locale>;
@@ -45,6 +46,9 @@ export const PortfolioConfig = z.object({
   }),
   weights: ScoreWeights.default({ loc: 0.5, recency: 0.3, maturity: 0.2 }),
   projects: ProjectsConfig.default({ pinned_first: true, max: 6 }),
+  // Backward compatible: existing configs without `audit:` validate by
+  // falling through to the AuditConfig defaults.
+  audit: AuditConfig.default(AuditConfig.parse({})),
 });
 export type PortfolioConfig = z.infer<typeof PortfolioConfig>;
 
@@ -62,6 +66,12 @@ export const ActionInputs = z.object({
   commitMessage: z.string().default('chore: refresh portfolio'),
   dryRun: z.boolean().default(false),
   explain: z.boolean().default(false),
+  // v0.2 audit-mode inputs. `mode` defaults to 'portfolio' so existing v0.1
+  // workflows are unaffected.
+  mode: z.enum(['portfolio', 'audit', 'both']).default('portfolio'),
+  auditOutputMd: z.string().default('audit.md'),
+  auditOutputJson: z.string().default('audit.json'),
+  auditFailOn: z.union([Severity, z.literal('')]).default(''),
 });
 export type ActionInputs = z.infer<typeof ActionInputs>;
 

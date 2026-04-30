@@ -98,6 +98,28 @@ npx portfoliocraft generate --user AbdullahBakir97 --dry-run --explain
 
 Same engine, no Action runtime required.
 
+## Audit mode (v0.2)
+
+A second mode surfaces eight self-awareness signals across your public footprint — stale repos, missing licenses, missing READMEs, missing tests, PR rot, bug debt, archived-but-active repos, and archive suggestions.
+
+```yaml
+- uses: AbdullahBakir97/PortfolioCraft@v1
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
+    mode: audit            # 'portfolio' (default), 'audit', or 'both'
+    audit-output-md: audit.md
+    audit-output-json: audit.json
+    audit-fail-on: ''      # '' | low | medium | high | critical
+```
+
+```bash
+npx portfoliocraft audit --user AbdullahBakir97 --md audit.md --json audit.json
+```
+
+Outputs are deterministic: an idempotent Markdown report (between `<!-- PORTFOLIOCRAFT-AUDIT:START -->` markers if the path matches your README) and a Zod-validated JSON report (`schemaVersion: "1.0.0"`) suitable for downstream tooling. Default `mode: portfolio` is unchanged from v0.1 — existing workflows keep working.
+
+Full check catalog and configuration reference live at the [docs site](apps/docs/src/content/docs/audit/overview.md).
+
 ## Configuration file
 
 ```yaml
