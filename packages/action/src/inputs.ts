@@ -16,6 +16,10 @@ export function readInputs(): ActionInputs {
     commitMessage: core.getInput('commit-message') || 'chore: refresh portfolio',
     dryRun: core.getBooleanInput('dry-run'),
     explain: core.getBooleanInput('explain'),
+    mode: core.getInput('mode') || 'portfolio',
+    auditOutputMd: core.getInput('audit-output-md') || 'audit.md',
+    auditOutputJson: core.getInput('audit-output-json') || 'audit.json',
+    auditFailOn: core.getInput('audit-fail-on') || '',
   };
 
   return ActionInputs.parse(raw);

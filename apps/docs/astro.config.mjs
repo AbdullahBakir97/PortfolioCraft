@@ -14,6 +14,15 @@ export default defineConfig({
         { label: 'Quickstart', link: '/quickstart/' },
         { label: 'Inputs reference', link: '/inputs/' },
         { label: 'Configuration file', link: '/config/' },
+        {
+          label: 'Audit',
+          items: [
+            { label: 'Audit mode', link: '/audit/overview/' },
+            { label: 'Audit configuration', link: '/audit/configuration/' },
+            { label: 'Finding catalog', link: '/audit/catalog/' },
+            { label: 'CI recipes', link: '/audit/ci-recipes/' },
+          ],
+        },
         { label: 'Examples', link: '/examples/' },
         { label: 'Architecture', link: '/architecture/' },
       ],
