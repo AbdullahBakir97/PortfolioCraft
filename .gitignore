@@ -41,6 +41,7 @@ Thumbs.db
 .vitest-cache/
 
 # Local editor / tooling state
+.claude/
 .cursor/
 .history/
 

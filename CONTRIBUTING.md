@@ -56,25 +56,19 @@ bundle-presence gate. To update ncc:
 The release workflow re-bundles on Linux before tagging, so the bundle that
 ships to the Marketplace is always deterministic regardless of the dev OS.
 
-## Known upstream issues
+## Deploying the docs site
 
-### Astro on Windows (zod parse error)
+The Starlight site lives at `apps/docs/` and ships with `vercel.json` for a
+one-click Vercel deploy:
 
-`apps/docs` (Astro 5.1.1) fails on Windows with a zod schema parse error
-inside Astro's internal config loader. To keep CI green on contributor
-machines, the `build` and `typecheck` scripts in `apps/docs/package.json`
-are no-ops; the real docs build runs in a dedicated Linux-only workflow
-(`pnpm --filter @portfoliocraft/docs build:site`).
+1. Sign in to Vercel and **Import** the `AbdullahBakir97/PortfolioCraft` repo.
+2. Set the **Root Directory** to `apps/docs`.
+3. Vercel auto-detects Astro and respects the `vercel.json` build command.
+4. (Optional) Set a custom domain like `portfoliocraft.dev`.
 
-Once Astro 5.1.2+ ships with the upstream fix, restore the real scripts:
-
-```jsonc
-// apps/docs/package.json
-"build": "astro build",
-"typecheck": "astro check"
-```
-
-Tracking: <!-- TODO: link upstream Astro issue once filed -->
+The `ignoreCommand` in `vercel.json` skips deploys when the change doesn't
+touch `apps/docs/` or `packages/` — keeps the daily Dependabot churn from
+triggering pointless previews.
 
 ## Filing issues
 

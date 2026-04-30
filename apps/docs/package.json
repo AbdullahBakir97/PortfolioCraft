@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "node -e \"console.log('docs build runs in its own workflow')\"",
-    "build:site": "astro build",
-    "typecheck": "node -e \"console.log('docs typecheck delegated to docs build job')\"",
+    "build": "astro build",
+    "typecheck": "astro check",
     "test": "echo 'no docs tests'"
   },
   "dependencies": {

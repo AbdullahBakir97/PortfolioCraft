@@ -1,5 +1,5 @@
 import type { PortfolioReport } from '@portfoliocraft/core';
-import { type CSSProperties, type ReactElement, type ReactNode, createElement } from 'react';
+import { type CSSProperties, createElement, type ReactElement, type ReactNode } from 'react';
 import satori from 'satori';
 
 export interface RenderSvgOptions {

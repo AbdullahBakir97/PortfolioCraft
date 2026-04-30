@@ -40,8 +40,12 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Typecheck (excluding docs)
+        # The Action and CLI run on Node 20 (action.yml: runs.using: node20),
+        # so the main CI job is pinned to Node 20 too. Astro 6 (used only by
+        # apps/docs) requires Node 22+ — its typecheck and build live in the
+        # `docs` job below.
+        run: pnpm exec turbo run typecheck --filter='!@portfoliocraft/docs'
 
       - name: Test
         run: pnpm test
@@ -57,3 +61,31 @@ jobs:
           # strings baked in by the Linux vs. Windows minifier). The release
           # workflow re-bundles on Linux before tagging, so what ships to the
           # Marketplace is always the deterministic Linux build.
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck docs
+        run: pnpm --filter @portfoliocraft/docs typecheck
+
+      - name: Build docs
+        run: pnpm --filter @portfoliocraft/docs build

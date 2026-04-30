@@ -7,9 +7,13 @@ export default defineConfig({
     starlight({
       title: 'PortfolioCraft',
       description: 'Generate a living portfolio from your GitHub activity.',
-      social: {
-        github: 'https://github.com/AbdullahBakir97/portfoliocraft',
-      },
+      social: [
+        {
+          icon: 'github',
+          label: 'GitHub',
+          href: 'https://github.com/AbdullahBakir97/PortfolioCraft',
+        },
+      ],
       sidebar: [
         { label: 'Quickstart', link: '/quickstart/' },
         { label: 'Inputs reference', link: '/inputs/' },

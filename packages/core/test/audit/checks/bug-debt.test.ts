@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bugDebtCheck } from '../../../src/audit/checks/bug-debt.js';
-import { NOW, auditCtx, extrasFor, repo } from '../fixtures.js';
+import { auditCtx, extrasFor, NOW, repo } from '../fixtures.js';
 
 const MS_PER_DAY = 86_400_000;
 
