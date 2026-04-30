@@ -1,5 +1,5 @@
 import * as core from '@actions/core';
-import { ActionInputs } from '@devportfolio/core';
+import { ActionInputs } from '@portfoliocraft/core';
 
 export function readInputs(): ActionInputs {
   const raw = {
@@ -11,7 +11,7 @@ export function readInputs(): ActionInputs {
     outputJson: core.getInput('output-json'),
     outputPdf: core.getInput('output-pdf'),
     outputSvgDir: core.getInput('output-svg-dir'),
-    configFile: core.getInput('config-file') || '.devportfolio.yml',
+    configFile: core.getInput('config-file') || '.portfoliocraft.yml',
     commit: core.getBooleanInput('commit'),
     commitMessage: core.getInput('commit-message') || 'chore: refresh portfolio',
     dryRun: core.getBooleanInput('dry-run'),

@@ -13,7 +13,7 @@ The floating `v1` tag tracks the latest `1.x` release. Security fixes land on `m
 
 Please **do not** open a public issue for security reports.
 
-Use GitHub's [private vulnerability reporting](https://github.com/AbdullahBakir97/devportfolio/security/advisories/new) or email `abdullah.bakir.1997@gmail.com` with:
+Use GitHub's [private vulnerability reporting](https://github.com/AbdullahBakir97/portfoliocraft/security/advisories/new) or email `abdullah.bakir.1997@gmail.com` with:
 
 - A description of the issue and impact.
 - Steps to reproduce (a minimal workflow snippet is ideal).

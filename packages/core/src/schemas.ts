@@ -57,7 +57,7 @@ export const ActionInputs = z.object({
   outputJson: z.string().default('profile.json'),
   outputPdf: z.string().default('cv.pdf'),
   outputSvgDir: z.string().default('assets/cards'),
-  configFile: z.string().default('.devportfolio.yml'),
+  configFile: z.string().default('.portfoliocraft.yml'),
   commit: z.boolean().default(true),
   commitMessage: z.string().default('chore: refresh portfolio'),
   dryRun: z.boolean().default(false),

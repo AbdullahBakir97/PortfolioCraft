@@ -1,17 +1,17 @@
 {
-  "name": "devportfolio",
+  "name": "portfoliocraft",
   "version": "0.0.0",
   "private": true,
   "description": "Generate a living portfolio (README sections, JSON Resume, PDF CV, SVG cards) from your GitHub activity.",
   "license": "Apache-2.0",
   "author": "Abdullah Bakir <abdullah.bakir.1997@gmail.com>",
-  "homepage": "https://github.com/AbdullahBakir97/devportfolio",
+  "homepage": "https://github.com/AbdullahBakir97/portfoliocraft",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AbdullahBakir97/devportfolio.git"
+    "url": "git+https://github.com/AbdullahBakir97/portfoliocraft.git"
   },
   "bugs": {
-    "url": "https://github.com/AbdullahBakir97/devportfolio/issues"
+    "url": "https://github.com/AbdullahBakir97/portfoliocraft/issues"
   },
   "engines": {
     "node": ">=20.18.0",
@@ -25,7 +25,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "turbo run typecheck",
-    "bundle": "pnpm --filter @devportfolio/action run bundle",
+    "bundle": "pnpm --filter @portfoliocraft/action run bundle",
     "verify-dist": "pnpm bundle && git diff --quiet dist/ || (echo 'dist/ is out of date — run pnpm bundle and commit' && exit 1)",
     "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm bundle",
     "changeset": "changeset",

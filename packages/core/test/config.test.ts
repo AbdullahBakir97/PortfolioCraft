@@ -6,13 +6,13 @@ import { loadConfigFile, mergeConfigWithInputs } from '../src/config.js';
 
 describe('config', () => {
   it('returns defaults when file does not exist', async () => {
-    const cfg = await loadConfigFile('/no/such/path/.devportfolio.yml');
+    const cfg = await loadConfigFile('/no/such/path/.portfoliocraft.yml');
     expect(cfg.locale).toBe('en');
   });
 
   it('parses a YAML config and validates it', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'dp-cfg-'));
-    const path = join(dir, '.devportfolio.yml');
+    const path = join(dir, '.portfoliocraft.yml');
     writeFileSync(
       path,
       `sections: [header, projects]

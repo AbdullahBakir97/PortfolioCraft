@@ -4,7 +4,12 @@
   "commit": false,
   "fixed": [],
   "linked": [
-    ["@devportfolio/action", "@devportfolio/core", "@devportfolio/renderers", "@devportfolio/cli"]
+    [
+      "@portfoliocraft/action",
+      "@portfoliocraft/core",
+      "@portfoliocraft/renderers",
+      "@portfoliocraft/cli"
+    ]
   ],
   "access": "public",
   "baseBranch": "main",

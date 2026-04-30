@@ -2,13 +2,13 @@ import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://devportfolio.dev',
+  site: 'https://portfoliocraft.dev',
   integrations: [
     starlight({
-      title: 'DevPortfolio',
+      title: 'PortfolioCraft',
       description: 'Generate a living portfolio from your GitHub activity.',
       social: {
-        github: 'https://github.com/AbdullahBakir97/devportfolio',
+        github: 'https://github.com/AbdullahBakir97/portfoliocraft',
       },
       sidebar: [
         { label: 'Quickstart', link: '/quickstart/' },

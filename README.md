@@ -1,8 +1,8 @@
-# DevPortfolio
+# PortfolioCraft
 
-[![Marketplace](https://img.shields.io/badge/marketplace-DevPortfolio-blue)](https://github.com/marketplace/actions/devportfolio)
-[![CI](https://github.com/AbdullahBakir97/DevPortfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdullahBakir97/DevPortfolio/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/AbdullahBakir97/DevPortfolio/actions/workflows/codeql.yml/badge.svg)](https://github.com/AbdullahBakir97/DevPortfolio/actions/workflows/codeql.yml)
+[![Marketplace](https://img.shields.io/badge/marketplace-PortfolioCraft-blue)](https://github.com/marketplace/actions/portfoliocraft)
+[![CI](https://github.com/AbdullahBakir97/PortfolioCraft/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdullahBakir97/PortfolioCraft/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/AbdullahBakir97/PortfolioCraft/actions/workflows/codeql.yml/badge.svg)](https://github.com/AbdullahBakir97/PortfolioCraft/actions/workflows/codeql.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Node 20 LTS](https://img.shields.io/badge/node-20.18.0%20LTS-339933?logo=node.js&logoColor=white)](.nvmrc)
 
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: AbdullahBakir97/DevPortfolio@v1
+      - uses: AbdullahBakir97/PortfolioCraft@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -39,8 +39,8 @@ jobs:
 Then in your `README.md`, drop the markers wherever you want generated content:
 
 ```markdown
-<!-- DEVPORTFOLIO:START -->
-<!-- DEVPORTFOLIO:END -->
+<!-- PORTFOLIOCRAFT:START -->
+<!-- PORTFOLIOCRAFT:END -->
 ```
 
 That's it. The next run inserts your stack, top projects, activity summary, and a generation receipt between the markers.
@@ -68,7 +68,7 @@ Each artifact is independent — set the matching path input to `''` to skip it.
 | `output-json`    | `profile.json`                   | JSON Resume output path. Empty string to skip.                                               |
 | `output-pdf`     | `cv.pdf`                         | PDF CV output path. Empty string to skip.                                                    |
 | `output-svg-dir` | `assets/cards`                   | Directory for stat cards. Empty string to skip.                                              |
-| `config-file`    | `.devportfolio.yml`              | Optional YAML config to override defaults (filters, weights, sections).                      |
+| `config-file`    | `.portfoliocraft.yml`              | Optional YAML config to override defaults (filters, weights, sections).                      |
 | `commit`         | `true`                           | Commit generated artifacts back to the repo on a non-`dry-run`.                              |
 | `commit-message` | `chore: refresh portfolio`       | Commit message used when committing artifacts.                                               |
 | `dry-run`        | `false`                          | Run end-to-end without writing files or committing.                                          |
@@ -86,14 +86,14 @@ Each artifact is independent — set the matching path input to `''` to skip it.
 
 ## How scoring works
 
-Stack proficiency is computed as `LOC × recency_decay × repo_maturity` per language, then ranked and bucketed into proficiency tiers. Project significance excludes forks, archives, and tutorial-shaped repos by default; you can override the filter rules in `.devportfolio.yml`. Domain classification (Backend / Frontend / DevOps / ML / Mobile) uses a deterministic, weighted-keyword classifier over languages, topics, and dependency manifests.
+Stack proficiency is computed as `LOC × recency_decay × repo_maturity` per language, then ranked and bucketed into proficiency tiers. Project significance excludes forks, archives, and tutorial-shaped repos by default; you can override the filter rules in `.portfoliocraft.yml`. Domain classification (Backend / Frontend / DevOps / ML / Mobile) uses a deterministic, weighted-keyword classifier over languages, topics, and dependency manifests.
 
 Run with `explain: true` to see every weight, decision, and tie-break in the job log.
 
 ## Local CLI
 
 ```bash
-npx devportfolio generate --user AbdullahBakir97 --dry-run --explain
+npx portfoliocraft generate --user AbdullahBakir97 --dry-run --explain
 ```
 
 Same engine, no Action runtime required.
@@ -101,7 +101,7 @@ Same engine, no Action runtime required.
 ## Configuration file
 
 ```yaml
-# .devportfolio.yml
+# .portfoliocraft.yml
 sections: [header, stack, projects, activity]
 locale: en
 filters:
@@ -132,7 +132,7 @@ The repo is a pnpm + Turborepo monorepo:
 - `packages/action` — thin Action entrypoint (consumes `@actions/*`)
 - `packages/core` — framework-free engine (Octokit, ingestion, scoring, classification)
 - `packages/renderers` — markdown / json-resume / pdf / svg
-- `packages/cli` — `npx devportfolio`
+- `packages/cli` — `npx portfoliocraft`
 - `apps/docs` — Starlight site
 
 ## Security

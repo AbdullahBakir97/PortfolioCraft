@@ -1,5 +1,5 @@
-export const START_MARKER = '<!-- DEVPORTFOLIO:START -->';
-export const END_MARKER = '<!-- DEVPORTFOLIO:END -->';
+export const START_MARKER = '<!-- PORTFOLIOCRAFT:START -->';
+export const END_MARKER = '<!-- PORTFOLIOCRAFT:END -->';
 
 export interface ApplyMarkersResult {
   content: string;

@@ -1,4 +1,4 @@
-import type { PortfolioReport } from '@devportfolio/core';
+import type { PortfolioReport } from '@portfoliocraft/core';
 
 export interface JsonResume {
   $schema: string;

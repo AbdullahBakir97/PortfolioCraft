@@ -9,14 +9,14 @@ import {
   loadConfigFile,
   memoryCache,
   mergeConfigWithInputs,
-} from '@devportfolio/core';
-import { applyMarkers, renderJsonResume, renderMarkdown } from '@devportfolio/renderers';
+} from '@portfoliocraft/core';
+import { applyMarkers, renderJsonResume, renderMarkdown } from '@portfoliocraft/renderers';
 import { Command } from 'commander';
 
 const program = new Command();
 
 program
-  .name('devportfolio')
+  .name('portfoliocraft')
   .description('Generate a living portfolio from your GitHub activity')
   .version('0.1.0');
 
@@ -25,7 +25,7 @@ program
   .description('Generate portfolio artifacts for a GitHub user')
   .requiredOption('--user <login>', 'GitHub login to profile')
   .option('--token <token>', 'GitHub token (falls back to GITHUB_TOKEN env var)')
-  .option('--config <path>', 'Path to .devportfolio.yml', '.devportfolio.yml')
+  .option('--config <path>', 'Path to .portfoliocraft.yml', '.portfoliocraft.yml')
   .option('--locale <locale>', 'Template locale (en|ar)', 'en')
   .option('--sections <list>', 'Comma-separated sections', 'header,stack,projects,activity')
   .option('--readme <path>', 'README to update between markers', 'README.md')

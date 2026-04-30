@@ -15,7 +15,7 @@ export function createLogger(options: LoggerOptions = {}): Logger {
 
   return pino({
     level,
-    base: { app: 'devportfolio' },
+    base: { app: 'portfoliocraft' },
     timestamp: stdTimeFunctions.isoTime,
     ...(transport ? { transport } : {}),
   });

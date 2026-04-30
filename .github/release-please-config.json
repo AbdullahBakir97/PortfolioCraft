@@ -6,7 +6,7 @@
   "bump-patch-for-minor-pre-major": false,
   "packages": {
     ".": {
-      "package-name": "devportfolio",
+      "package-name": "portfoliocraft",
       "release-type": "node",
       "extra-files": ["action.yml"]
     }

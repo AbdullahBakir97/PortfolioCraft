@@ -1,4 +1,4 @@
-name: 'DevPortfolio'
+name: 'PortfolioCraft'
 description: 'Generate a verifiable professional portfolio from your GitHub history.'
 author: 'Abdullah Bakir'
 branding:
@@ -40,7 +40,7 @@ inputs:
   config-file:
     description: 'Optional YAML config file to override defaults.'
     required: false
-    default: '.devportfolio.yml'
+    default: '.portfoliocraft.yml'
   commit:
     description: 'Whether to commit generated artifacts back to the repository.'
     required: false

@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Wire DevPortfolio into your profile repository in under 60 seconds.
+description: Wire PortfolioCraft into your profile repository in under 60 seconds.
 ---
 
 ```yaml
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: AbdullahBakir97/devportfolio@v1
+      - uses: AbdullahBakir97/portfoliocraft@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -28,6 +28,6 @@ jobs:
 Then drop the markers anywhere in your `README.md`:
 
 ```markdown
-<!-- DEVPORTFOLIO:START -->
-<!-- DEVPORTFOLIO:END -->
+<!-- PORTFOLIOCRAFT:START -->
+<!-- PORTFOLIOCRAFT:END -->
 ```

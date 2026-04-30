@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-describe('@devportfolio/action smoke', () => {
+describe('@portfoliocraft/action smoke', () => {
   it('resolves the action entrypoint module without crashing', async () => {
     // Importing the module evaluates only top-level bindings; the run() call
     // is gated behind main() which only executes when GITHUB_ACTIONS env vars

@@ -1,4 +1,4 @@
-import type { PortfolioReport } from '@devportfolio/core';
+import type { PortfolioReport } from '@portfoliocraft/core';
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
 import { createElement } from 'react';
 

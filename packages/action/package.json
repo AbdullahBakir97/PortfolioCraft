@@ -1,7 +1,7 @@
 {
-  "name": "@devportfolio/action",
+  "name": "@portfoliocraft/action",
   "version": "0.1.0",
-  "description": "DevPortfolio GitHub Action entrypoint.",
+  "description": "PortfolioCraft GitHub Action entrypoint.",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -17,8 +17,8 @@
     "@actions/core": "1.11.1",
     "@actions/exec": "1.1.1",
     "@actions/github": "6.0.0",
-    "@devportfolio/core": "workspace:*",
-    "@devportfolio/renderers": "workspace:*"
+    "@portfoliocraft/core": "workspace:*",
+    "@portfoliocraft/renderers": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "20.17.10",

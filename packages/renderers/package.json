@@ -1,7 +1,7 @@
 {
-  "name": "@devportfolio/renderers",
+  "name": "@portfoliocraft/renderers",
   "version": "0.1.0",
-  "description": "Markdown, JSON Resume, PDF, and SVG renderers for DevPortfolio.",
+  "description": "Markdown, JSON Resume, PDF, and SVG renderers for PortfolioCraft.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,7 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@devportfolio/core": "workspace:*",
+    "@portfoliocraft/core": "workspace:*",
     "@react-pdf/renderer": "4.1.5",
     "@resvg/resvg-js": "2.6.2",
     "eta": "3.5.0",

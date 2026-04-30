@@ -1,5 +1,5 @@
-import type { PortfolioReport } from '@devportfolio/core';
-import { PortfolioConfig } from '@devportfolio/core';
+import type { PortfolioReport } from '@portfoliocraft/core';
+import { PortfolioConfig } from '@portfoliocraft/core';
 import { describe, expect, it } from 'vitest';
 import { renderJsonResume } from '../src/json-resume.js';
 

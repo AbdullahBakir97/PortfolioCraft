@@ -1,7 +1,7 @@
 {
-  "name": "@devportfolio/core",
+  "name": "@portfoliocraft/core",
   "version": "0.1.0",
-  "description": "Framework-free engine for DevPortfolio: GitHub ingestion, scoring, classification.",
+  "description": "Framework-free engine for PortfolioCraft: GitHub ingestion, scoring, classification.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/index.js",

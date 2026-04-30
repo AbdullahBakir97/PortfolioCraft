@@ -19,7 +19,7 @@ export interface GitHubClient {
 }
 
 export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
-  const { token, userAgent = 'devportfolio/1.0', baseUrl } = options;
+  const { token, userAgent = 'portfoliocraft/1.0', baseUrl } = options;
 
   const rest = new ThrottledOctokit({
     auth: token,

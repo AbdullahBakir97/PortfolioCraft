@@ -1,10 +1,10 @@
 ---
 title: Configuration file
-description: Override defaults with .devportfolio.yml
+description: Override defaults with .portfoliocraft.yml
 ---
 
 ```yaml
-# .devportfolio.yml
+# .portfoliocraft.yml
 sections: [header, stack, projects, activity]
 locale: en
 filters:

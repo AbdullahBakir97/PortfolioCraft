@@ -2,7 +2,7 @@ export const id = 804;
 export const ids = [804];
 export const modules = {
 
-/***/ 4804:
+/***/ 2423:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 

@@ -1,4 +1,4 @@
-import type { PortfolioReport } from '@devportfolio/core';
+import type { PortfolioReport } from '@portfoliocraft/core';
 import { type CSSProperties, type ReactElement, type ReactNode, createElement } from 'react';
 import satori from 'satori';
 

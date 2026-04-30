@@ -11,8 +11,13 @@ import {
   loadConfigFile,
   memoryCache,
   mergeConfigWithInputs,
-} from '@devportfolio/core';
-import { applyMarkers, renderJsonResume, renderMarkdown, renderPdf } from '@devportfolio/renderers';
+} from '@portfoliocraft/core';
+import {
+  applyMarkers,
+  renderJsonResume,
+  renderMarkdown,
+  renderPdf,
+} from '@portfoliocraft/renderers';
 
 export interface RunResult {
   readmeUpdated: boolean;
@@ -66,7 +71,7 @@ export async function run(inputs: ActionInputs): Promise<RunResult> {
       // README/JSON Resume outputs are independently useful.
       const message = err instanceof Error ? err.message : String(err);
       core.warning(
-        `Skipping PDF: ${message}. See https://github.com/AbdullahBakir97/DevPortfolio/issues for font-bundling status.`,
+        `Skipping PDF: ${message}. See https://github.com/AbdullahBakir97/PortfolioCraft/issues for font-bundling status.`,
       );
     }
   }
@@ -118,7 +123,7 @@ async function writeReadme(
   const result = applyMarkers(existing, generated);
 
   if (!result.hasMarkers) {
-    core.warning(`No DEVPORTFOLIO markers found in ${path}; nothing to update.`);
+    core.warning(`No PORTFOLIOCRAFT markers found in ${path}; nothing to update.`);
     return false;
   }
   if (!result.changed) return false;

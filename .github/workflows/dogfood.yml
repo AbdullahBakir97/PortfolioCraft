@@ -25,12 +25,12 @@ jobs:
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Run DevPortfolio against AbdullahBakir97 (dry-run)
+      - name: Run PortfolioCraft against AbdullahBakir97 (dry-run)
         uses: ./
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: AbdullahBakir97
-          config-file: examples/abdullahbakir97/.devportfolio.yml
+          config-file: examples/abdullahbakir97/.portfoliocraft.yml
           output-readme: ''
           output-json: examples/abdullahbakir97/profile.json
           output-pdf: examples/abdullahbakir97/cv.pdf

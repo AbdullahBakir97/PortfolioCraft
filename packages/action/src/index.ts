@@ -12,7 +12,7 @@ async function main(): Promise<void> {
       core.setFailed(err.message);
       if (err.stack) core.debug(err.stack);
     } else {
-      core.setFailed('DevPortfolio failed with an unknown error');
+      core.setFailed('PortfolioCraft failed with an unknown error');
     }
   }
 }

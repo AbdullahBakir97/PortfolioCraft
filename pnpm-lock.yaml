@@ -56,10 +56,10 @@ importers:
       '@actions/github':
         specifier: 6.0.0
         version: 6.0.0
-      '@devportfolio/core':
+      '@portfoliocraft/core':
         specifier: workspace:*
         version: link:../core
-      '@devportfolio/renderers':
+      '@portfoliocraft/renderers':
         specifier: workspace:*
         version: link:../renderers
     devDependencies:
@@ -78,10 +78,10 @@ importers:
 
   packages/cli:
     dependencies:
-      '@devportfolio/core':
+      '@portfoliocraft/core':
         specifier: workspace:*
         version: link:../core
-      '@devportfolio/renderers':
+      '@portfoliocraft/renderers':
         specifier: workspace:*
         version: link:../renderers
       commander:
@@ -140,7 +140,7 @@ importers:
 
   packages/renderers:
     dependencies:
-      '@devportfolio/core':
+      '@portfoliocraft/core':
         specifier: workspace:*
         version: link:../core
       '@react-pdf/renderer':

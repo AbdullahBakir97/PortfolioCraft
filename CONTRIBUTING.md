@@ -1,4 +1,4 @@
-# Contributing to DevPortfolio
+# Contributing to PortfolioCraft
 
 Thanks for your interest. This project is built to be hackable — every layer has a single responsibility and is independently testable.
 
@@ -48,8 +48,8 @@ The Action entrypoint is bundled with `@vercel/ncc` to `dist/index.js` at the re
 rebuild `dist/index.js` after bumping ncc, so its PRs would always trip the
 bundle-presence gate. To update ncc:
 
-1. `pnpm --filter @devportfolio/action add -D @vercel/ncc@latest`
-2. `pnpm --filter @devportfolio/action build`
+1. `pnpm --filter @portfoliocraft/action add -D @vercel/ncc@latest`
+2. `pnpm --filter @portfoliocraft/action build`
 3. Commit both `package.json` / `pnpm-lock.yaml` and the regenerated `dist/`.
 4. Open a PR titled `chore(deps): bump @vercel/ncc to <version>`.
 
@@ -60,7 +60,7 @@ ships to the Marketplace is always deterministic regardless of the dev OS.
 
 Please include:
 
-- DevPortfolio version (`v1.x.y` or commit SHA).
+- PortfolioCraft version (`v1.x.y` or commit SHA).
 - Workflow excerpt that triggered the bug.
 - Output of running locally with `--dry-run --explain`.
 - Whether the GitHub user is public/private and approximate repo count.

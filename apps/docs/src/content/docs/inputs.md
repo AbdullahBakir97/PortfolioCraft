@@ -1,6 +1,6 @@
 ---
 title: Inputs reference
-description: Every input the DevPortfolio Action accepts.
+description: Every input the PortfolioCraft Action accepts.
 ---
 
 | Name             | Default                          | Description                                                                |
@@ -13,7 +13,7 @@ description: Every input the DevPortfolio Action accepts.
 | `output-json`    | `profile.json`                   | JSON Resume output path. Empty string to skip.                             |
 | `output-pdf`     | `cv.pdf`                         | PDF CV output path. Empty string to skip.                                  |
 | `output-svg-dir` | `assets/cards`                   | Directory for stat cards. Empty string to skip.                            |
-| `config-file`    | `.devportfolio.yml`              | Optional YAML config to override defaults.                                 |
+| `config-file`    | `.portfoliocraft.yml`              | Optional YAML config to override defaults.                                 |
 | `commit`         | `true`                           | Commit generated artifacts back to the repo.                               |
 | `commit-message` | `chore: refresh portfolio`       | Commit message used when committing artifacts.                             |
 | `dry-run`        | `false`                          | Run end-to-end without writing files or committing.                        |
