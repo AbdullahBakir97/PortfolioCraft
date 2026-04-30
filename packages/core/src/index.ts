@@ -6,5 +6,6 @@ export * from './filters.js';
 export * from './github.js';
 export * from './ingest.js';
 export * from './logger.js';
+export * from './retry.js';
 export * from './schemas.js';
 export * from './scoring.js';
