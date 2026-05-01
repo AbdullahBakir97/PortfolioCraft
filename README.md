@@ -122,6 +122,31 @@ Outputs are deterministic: an idempotent Markdown report (between `<!-- PORTFOLI
 
 Full check catalog and configuration reference live at the [docs site](apps/docs/src/content/docs/audit/overview.md).
 
+## Summary mode (v0.4) — CV + university applications
+
+The original use case behind PortfolioCraft was *"I needed a summary of my projects so I can edit my CV and write university applications."* Summary mode ships that — three paste-ready Markdown outputs derived deterministically from your GitHub data:
+
+| Output | Format | Use case |
+|---|---|---|
+| `summary-cv.md` | Compact CV section: header, skills tiers, selected projects, activity | Paste into your CV and edit |
+| `summary-uni.md` | Narrative: learning trajectory, technical depth, scope of work | University motivation letters / personal statements |
+| `summary-case-studies.md` | One section per top project: stack, scale, overview, topics | Portfolio decks, application supplements |
+
+```yaml
+- uses: AbdullahBakir97/PortfolioCraft@v1
+  with:
+    token: ${{ secrets.GITHUB_TOKEN }}
+    mode: summary               # or 'all' for portfolio + audit + summary
+    summary-format: all         # cv | uni | case-studies | all
+    summary-projects-max: 6
+```
+
+```bash
+npx portfoliocraft summary --user AbdullahBakir97 --format all
+```
+
+All summary text is generated **deterministically** from your existing GitHub data — no LLM, no API key, no hosted backend. The output is intentionally a clean draft for you to edit, not polished prose.
+
 ## Configuration file
 
 ```yaml

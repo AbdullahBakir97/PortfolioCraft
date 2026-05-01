@@ -4,7 +4,9 @@ import { dirname } from 'node:path';
 import {
   type AuditFinding,
   type AuditReport,
+  buildCvSummary,
   buildReport,
+  buildUniSummary,
   type Category,
   createGitHubClient,
   createLogger,
@@ -21,8 +23,11 @@ import {
   applyMarkers,
   renderAuditJson,
   renderAuditMarkdown,
+  renderCaseStudiesMarkdown,
+  renderCvMarkdown,
   renderJsonResume,
   renderMarkdown,
+  renderUniMarkdown,
 } from '@portfoliocraft/renderers';
 import { Command } from 'commander';
 
@@ -184,6 +189,97 @@ program
     process.stdout.write(
       `audit: ${report.summary.totalFindings} finding(s) across ${report.summary.reposScanned} repo(s)\n`,
     );
+  });
+
+program
+  .command('summary')
+  .description('Generate CV / university / case-study summaries from your GitHub history')
+  .requiredOption('--user <login>', 'GitHub login to summarize')
+  .option('--token <token>', 'GitHub token (falls back to GITHUB_TOKEN)')
+  .option('--config <path>', 'Path to .portfoliocraft.yml', '.portfoliocraft.yml')
+  .option('--format <format>', 'cv | uni | case-studies | all', 'all')
+  .option('--cv <path>', 'CV output path', 'summary-cv.md')
+  .option('--uni <path>', 'University output path', 'summary-uni.md')
+  .option('--case-studies <path>', 'Case studies output path', 'summary-case-studies.md')
+  .option('--projects-max <n>', 'Max projects in CV/case-studies', '6')
+  .option('--dry-run', 'Print to stdout, write nothing', false)
+  .action(async (opts) => {
+    const token = (opts.token as string | undefined) ?? process.env.GITHUB_TOKEN;
+    if (!token) {
+      console.error('A token is required. Pass --token or set GITHUB_TOKEN.');
+      process.exit(1);
+    }
+
+    const format = String(opts.format) as 'cv' | 'uni' | 'case-studies' | 'all';
+    if (format !== 'cv' && format !== 'uni' && format !== 'case-studies' && format !== 'all') {
+      console.error(`Invalid --format=${opts.format}. Use cv | uni | case-studies | all.`);
+      process.exit(1);
+    }
+
+    const projectsMax = Number.parseInt(String(opts.projectsMax ?? '6'), 10);
+    if (!Number.isFinite(projectsMax) || projectsMax <= 0) {
+      console.error('Invalid --projects-max; expected a positive integer.');
+      process.exit(1);
+    }
+
+    const logger = createLogger({ level: 'info', pretty: true });
+    const client = createGitHubClient({ token });
+    const cache = memoryCache();
+
+    // The summary phase doesn't take CLI overrides for sections/locale —
+    // those are README knobs, not summary-level. Use `fileConfig` directly,
+    // which is already a fully-validated `PortfolioConfig`.
+    const fileConfig = await loadConfigFile(opts.config);
+
+    const snapshot = await ingestSnapshot({ client, user: opts.user, cache, logger });
+    const report = buildReport({ config: fileConfig, snapshot });
+
+    const renderCv = format === 'cv' || format === 'all';
+    const renderUni = format === 'uni' || format === 'all';
+    const renderCases = format === 'case-studies' || format === 'all';
+
+    // Build the CV first (we may need its `selectedProjects` for the case-
+    // studies render even when the CV file itself isn't being written).
+    const cv = renderCv || renderCases ? buildCvSummary(report, { projectsMax }) : null;
+
+    if (renderCv && cv) {
+      const md = renderCvMarkdown(cv);
+      if (opts.dryRun) {
+        process.stdout.write(`${md}\n`);
+      } else if (opts.cv) {
+        await mkdir(dirname(opts.cv), { recursive: true });
+        await writeFile(opts.cv, md, 'utf8');
+      }
+    }
+
+    if (renderUni) {
+      const uni = buildUniSummary(report, { projectsMax });
+      const md = renderUniMarkdown(uni);
+      if (opts.dryRun) {
+        process.stdout.write(`${md}\n`);
+      } else if (opts.uni) {
+        await mkdir(dirname(opts.uni), { recursive: true });
+        await writeFile(opts.uni, md, 'utf8');
+      }
+    }
+
+    if (renderCases && cv) {
+      const md = renderCaseStudiesMarkdown(cv.selectedProjects);
+      if (opts.dryRun) {
+        process.stdout.write(`${md}\n`);
+      } else if (opts.caseStudies) {
+        await mkdir(dirname(opts.caseStudies), { recursive: true });
+        await writeFile(opts.caseStudies, md, 'utf8');
+      }
+    }
+
+    if (!opts.dryRun) {
+      process.stdout.write(
+        `summary: rendered ${[renderCv && 'cv', renderUni && 'uni', renderCases && 'case-studies']
+          .filter(Boolean)
+          .join(', ')} for ${opts.user}\n`,
+      );
+    }
   });
 
 await program.parseAsync(process.argv);
