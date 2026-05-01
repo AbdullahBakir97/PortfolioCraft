@@ -67,11 +67,26 @@ export const ActionInputs = z.object({
   dryRun: z.boolean().default(false),
   explain: z.boolean().default(false),
   // v0.2 audit-mode inputs. `mode` defaults to 'portfolio' so existing v0.1
-  // workflows are unaffected.
-  mode: z.enum(['portfolio', 'audit', 'both']).default('portfolio'),
+  // workflows are unaffected. v0.4 widens the enum with 'summary' (run only
+  // the application-summary phase) and 'all' (portfolio + audit + summary).
+  // 'both' is preserved verbatim — portfolio + audit only — so v0.2/v0.3
+  // workflows keep their exact behaviour.
+  mode: z.enum(['portfolio', 'audit', 'both', 'summary', 'all']).default('portfolio'),
   auditOutputMd: z.string().default('audit.md'),
   auditOutputJson: z.string().default('audit.json'),
   auditFailOn: z.union([Severity, z.literal('')]).default(''),
+  // v0.4 audit-check-run input: post a GitHub Checks API summary for the
+  // audit phase. Defaults true; tolerated as a no-op when the workflow lacks
+  // `permissions: checks: write` (warns and continues).
+  auditCheckRun: z.boolean().default(true),
+  // v0.4 summary-mode inputs. Defaults are chosen so that turning `mode` to
+  // 'summary' or 'all' renders all three artifacts at sensible paths without
+  // any further configuration.
+  summaryFormat: z.enum(['cv', 'uni', 'case-studies', 'all']).default('all'),
+  summaryOutputCv: z.string().default('summary-cv.md'),
+  summaryOutputUni: z.string().default('summary-uni.md'),
+  summaryOutputCaseStudies: z.string().default('summary-case-studies.md'),
+  summaryProjectsMax: z.number().int().positive().max(20).default(6),
 });
 export type ActionInputs = z.infer<typeof ActionInputs>;
 

@@ -25,12 +25,12 @@ jobs:
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run PortfolioCraft against AbdullahBakir97 (portfolio + audit)
+      - name: Run PortfolioCraft against AbdullahBakir97 (portfolio + audit + summary)
         uses: ./
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: AbdullahBakir97
-          mode: both
+          mode: all
           config-file: examples/abdullahbakir97/.portfoliocraft.yml
           output-readme: ''
           output-json: examples/abdullahbakir97/profile.json
@@ -39,6 +39,10 @@ jobs:
           audit-output-md: examples/abdullahbakir97/audit.md
           audit-output-json: examples/abdullahbakir97/audit.json
           audit-fail-on: ''
+          summary-format: all
+          summary-output-cv: examples/abdullahbakir97/summary-cv.md
+          summary-output-uni: examples/abdullahbakir97/summary-uni.md
+          summary-output-case-studies: examples/abdullahbakir97/summary-case-studies.md
           commit: false
           dry-run: false
           explain: true
@@ -53,5 +57,8 @@ jobs:
             examples/abdullahbakir97/cards/*.svg
             examples/abdullahbakir97/audit.md
             examples/abdullahbakir97/audit.json
+            examples/abdullahbakir97/summary-cv.md
+            examples/abdullahbakir97/summary-uni.md
+            examples/abdullahbakir97/summary-case-studies.md
           if-no-files-found: warn
           retention-days: 14

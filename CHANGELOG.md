@@ -5,6 +5,34 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-05-01
+
+Application-ready summaries. The original use case behind PortfolioCraft was: *"I needed a summary of my projects so I can edit my CV and write university applications."* v0.4 ships that, end-to-end. Additive — every existing v0.1+v0.2+v0.3 workflow continues unchanged.
+
+### Added
+- **New `summary` Action mode** and `summary` CLI subcommand. The `mode` enum widens to `portfolio | audit | both | summary | all`. The new `all` value runs portfolio + audit + summary in one pass.
+- **Three new paste-ready Markdown outputs**, each behind its own idempotent marker pair so they can be spliced into a curated README:
+  - `summary-cv.md` (`<!-- PORTFOLIOCRAFT-CV:START -->` / `END`) — compact CV section: header, skills tiers (strong / working / familiar), selected projects with one-paragraph blurbs, activity summary. Designed to paste into a real CV (LaTeX, Word, Google Docs) and lightly edit.
+  - `summary-uni.md` (`<!-- PORTFOLIOCRAFT-UNI:START -->` / `END`) — narrative format for university motivation letters and personal statements: learning trajectory year-by-year, technical depth per domain, scope-of-self-directed-work paragraph.
+  - `summary-case-studies.md` (`<!-- PORTFOLIOCRAFT-CASE-STUDIES:START -->` / `END`) — one section per top project: stack, duration, scale, overview, domain, topics. For portfolio decks and detailed application supplements.
+- **New CLI flags:** `--format cv|uni|case-studies|all`, `--cv <path>`, `--uni <path>`, `--case-studies <path>`, `--projects-max <n>`, `--dry-run`.
+- **New Action inputs:** `summary-format`, `summary-output-cv`, `summary-output-uni`, `summary-output-case-studies`, `summary-projects-max`.
+- **New Action outputs:** `summary-cv-path`, `summary-uni-path`, `summary-case-studies-path`.
+- **`audit-check-run` input** (default `true`) — closes the lingering v0.2 spec gap. Posts a GitHub Checks API summary with severity table + top-10 findings on every audit run. Soft-skips with a warning if the workflow lacks `permissions: checks: write`.
+- **New `withRetry`-comparable helpers** at the summary boundary — schemas validate, builds are pure functions, no LLM, no API key, no hosted backend.
+
+### Quality
+- 99.6% statement / 81.3% branch coverage on `packages/core/src/summary/`.
+- 138 new test assertions across 7 new test files (build, CV / Uni / case-studies renderers, summary markers, check-run summary).
+- Total project tests: 222 (up from 184 in v0.3.2).
+- Determinism property test: identical input → byte-identical Markdown across the CV / Uni / case-studies renderers.
+
+### Notes
+- All summary text is generated **deterministically** from your existing GitHub data + the v0.1 scoring + classification heuristics. No LLM, no API key, no hosted backend. Output is intentionally a *clean draft* for you to edit, not polished prose.
+- The CV mode is intentionally short (under ~1,500 words) — recruiters scan, they don't read.
+- The Uni mode adopts academic-application tone: factual, reserved, no marketing language.
+- LLM-powered case-study prose, job-fit scoring, and skill extraction remain the v1.1 "AI intelligence layer" theme — they need API key handling and cost controls that an OSS Action alone shouldn't make.
+
 ## [0.3.2] — 2026-04-30
 
 ### Fixed
@@ -118,6 +146,7 @@ Initial release.
 ### Security
 - Action requests minimum scopes: `public_repo` and `read:user`. No data leaves the runner.
 
+[0.4.0]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.4.0
 [0.3.2]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.3.2
 [0.3.1]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.3.1
 [0.3.0]: https://github.com/AbdullahBakir97/PortfolioCraft/releases/tag/v0.3.0

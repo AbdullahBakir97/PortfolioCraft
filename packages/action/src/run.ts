@@ -2,11 +2,14 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import * as core from '@actions/core';
 import { exec, getExecOutput } from '@actions/exec';
-import { context } from '@actions/github';
+import { context, getOctokit } from '@actions/github';
 import {
   type ActionInputs,
+  type AuditFinding,
   type AuditReport,
+  buildCvSummary,
   buildReport,
+  buildUniSummary,
   createGitHubClient,
   createLogger,
   ingestAuditExtras,
@@ -14,18 +17,25 @@ import {
   loadConfigFile,
   memoryCache,
   mergeConfigWithInputs,
+  type PortfolioReport,
   runAudit,
   SEVERITY_RANK,
   type Severity,
 } from '@portfoliocraft/core';
 import {
   applyAuditMarkers,
+  applyCaseStudiesMarkers,
+  applyCvMarkers,
   applyMarkers,
+  applyUniMarkers,
   renderAuditJson,
   renderAuditMarkdown,
+  renderCaseStudiesMarkdown,
+  renderCvMarkdown,
   renderJsonResume,
   renderMarkdown,
   renderPdf,
+  renderUniMarkdown,
 } from '@portfoliocraft/renderers';
 
 export interface RunResult {
@@ -38,6 +48,11 @@ export interface RunResult {
   auditJsonPath: string;
   auditFindingCount: number;
   auditFailOnResult: 'pass' | 'fail' | 'not-evaluated';
+  /** v0.4 summary outputs. Empty string when the summary phase didn't run
+   * or when the format gate excluded that artifact. */
+  summaryCvPath: string;
+  summaryUniPath: string;
+  summaryCaseStudiesPath: string;
   /** Commit SHA pushed back to the repo, or '' when nothing was committed. */
   commitSha: string;
   /**
@@ -76,16 +91,29 @@ export async function run(inputs: ActionInputs, deps: RunDeps = {}): Promise<Run
 
   const snapshot = await ingestSnapshot({ client, user: userLogin, cache, logger });
 
-  // Branch on mode. 'portfolio' (default) preserves v0.1 behavior exactly;
-  // 'audit' skips the portfolio outputs; 'both' runs both phases sequentially.
-  const runPortfolio = inputs.mode === 'portfolio' || inputs.mode === 'both';
-  const runAuditPhase = inputs.mode === 'audit' || inputs.mode === 'both';
+  // Branch on mode. 'portfolio' (default) preserves v0.1 behaviour exactly;
+  // 'audit' skips the portfolio outputs; 'both' runs portfolio + audit (v0.2);
+  // 'summary' runs only the v0.4 application-summary phase; 'all' runs every
+  // phase. Both `'both'` and the new `'all'` keep the v0.2/v0.3 audit semantics
+  // unchanged — `'all'` is strictly additive.
+  const runPortfolio =
+    inputs.mode === 'portfolio' || inputs.mode === 'both' || inputs.mode === 'all';
+  const runAuditPhase = inputs.mode === 'audit' || inputs.mode === 'both' || inputs.mode === 'all';
+  const runSummaryPhase = inputs.mode === 'summary' || inputs.mode === 'all';
+
+  // Hoist the portfolio report so the summary phase can reuse it without
+  // re-running buildReport. `report` is assigned the first time either phase
+  // needs it, then read by the second phase. When neither phase needs it
+  // (mode === 'audit'), it stays undefined and buildReport never runs.
+  let report: PortfolioReport | undefined;
+  if (runPortfolio || runSummaryPhase) {
+    report = buildReport({ config, snapshot });
+  }
 
   let readmeUpdated = false;
   let portfolioSummary = '';
 
-  if (runPortfolio) {
-    const report = buildReport({ config, snapshot });
+  if (runPortfolio && report) {
     portfolioSummary = report.summary;
 
     if (inputs.explain) {
@@ -195,6 +223,81 @@ export async function run(inputs: ActionInputs, deps: RunDeps = {}): Promise<Run
     }
 
     auditFailOnResult = evaluateFailOn(report, inputs.auditFailOn);
+
+    // v0.4 audit-check-run: post a GitHub Checks API summary so the run shows
+    // up on the commit/PR's Checks tab. Best-effort — `core.warning` and
+    // continue when the token lacks `checks: write`.
+    if (inputs.auditCheckRun && !inputs.dryRun) {
+      await postAuditCheckRun({
+        token: inputs.token,
+        findings: report.findings,
+        summary: report.summary,
+        failOnResult: auditFailOnResult,
+      });
+    }
+  }
+
+  // v0.4 summary phase: render CV / Uni / case-studies Markdown from the
+  // already-built `report` (hoisted above so we never re-fetch). Each format
+  // is gated by `summaryFormat` and writes either standalone or spliced
+  // between markers when its target path equals `outputReadme`.
+  let summaryCvPath = '';
+  let summaryUniPath = '';
+  let summaryCaseStudiesPath = '';
+
+  if (runSummaryPhase && report) {
+    const buildOpts = { projectsMax: inputs.summaryProjectsMax };
+    const renderCv = inputs.summaryFormat === 'cv' || inputs.summaryFormat === 'all';
+    const renderUni = inputs.summaryFormat === 'uni' || inputs.summaryFormat === 'all';
+    const renderCases = inputs.summaryFormat === 'case-studies' || inputs.summaryFormat === 'all';
+
+    if (renderCv && inputs.summaryOutputCv) {
+      const cv = buildCvSummary(report, buildOpts);
+      const md = renderCvMarkdown(cv);
+      await writeOrSpliceSummary({
+        target: inputs.summaryOutputCv,
+        readme: inputs.outputReadme,
+        generated: md,
+        applyMarkersFn: applyCvMarkers,
+        markerName: 'PORTFOLIOCRAFT-CV',
+        dryRun: inputs.dryRun,
+        writtenPaths,
+      });
+      summaryCvPath = inputs.summaryOutputCv;
+    }
+
+    if (renderUni && inputs.summaryOutputUni) {
+      const uni = buildUniSummary(report, buildOpts);
+      const md = renderUniMarkdown(uni);
+      await writeOrSpliceSummary({
+        target: inputs.summaryOutputUni,
+        readme: inputs.outputReadme,
+        generated: md,
+        applyMarkersFn: applyUniMarkers,
+        markerName: 'PORTFOLIOCRAFT-UNI',
+        dryRun: inputs.dryRun,
+        writtenPaths,
+      });
+      summaryUniPath = inputs.summaryOutputUni;
+    }
+
+    if (renderCases && inputs.summaryOutputCaseStudies) {
+      // The CV summary's `selectedProjects` is the canonical
+      // top-N-by-significance slice — exactly what the case-studies renderer
+      // wants. Build it once, slice off `selectedProjects`, render.
+      const cv = buildCvSummary(report, buildOpts);
+      const md = renderCaseStudiesMarkdown(cv.selectedProjects);
+      await writeOrSpliceSummary({
+        target: inputs.summaryOutputCaseStudies,
+        readme: inputs.outputReadme,
+        generated: md,
+        applyMarkersFn: applyCaseStudiesMarkers,
+        markerName: 'PORTFOLIOCRAFT-CASE-STUDIES',
+        dryRun: inputs.dryRun,
+        writtenPaths,
+      });
+      summaryCaseStudiesPath = inputs.summaryOutputCaseStudies;
+    }
   }
 
   // Optional commit step: stage written artifacts, commit + push when there
@@ -223,6 +326,12 @@ export async function run(inputs: ActionInputs, deps: RunDeps = {}): Promise<Run
   core.setOutput('audit-finding-count', auditFindingCount);
   core.setOutput('audit-fail-on-result', auditFailOnResult);
 
+  // v0.4 summary outputs. Empty when the format gate excluded the artifact
+  // or when summary phase didn't run at all.
+  core.setOutput('summary-cv-path', summaryCvPath);
+  core.setOutput('summary-uni-path', summaryUniPath);
+  core.setOutput('summary-case-studies-path', summaryCaseStudiesPath);
+
   // v0.3.1 commit outputs.
   core.setOutput('commit-sha', commitSha);
   core.setOutput('commit-skipped-reason', commitSkippedReason);
@@ -244,6 +353,9 @@ export async function run(inputs: ActionInputs, deps: RunDeps = {}): Promise<Run
     auditJsonPath,
     auditFindingCount,
     auditFailOnResult,
+    summaryCvPath,
+    summaryUniPath,
+    summaryCaseStudiesPath,
     commitSha,
     commitSkippedReason,
   };
@@ -371,6 +483,54 @@ async function writeFileEnsured(
 }
 
 /**
+ * Shared write/splice helper for the v0.4 summary phase. Mirrors the
+ * audit-Markdown branch in the audit phase: when the configured target path
+ * matches `outputReadme`, splice the generated block between the relevant
+ * marker pair using the supplied `applyMarkersFn`; otherwise write the file
+ * standalone. In every successful write the path is appended to
+ * `writtenPaths` (deduped), so the existing commit step picks it up.
+ */
+async function writeOrSpliceSummary(opts: {
+  target: string;
+  readme: string;
+  generated: string;
+  applyMarkersFn: (
+    existing: string,
+    generated: string,
+  ) => { content: string; changed: boolean; hasMarkers: boolean };
+  markerName: string;
+  dryRun: boolean;
+  writtenPaths: string[];
+}): Promise<void> {
+  if (opts.target === opts.readme) {
+    let existing = '';
+    try {
+      existing = await readFile(opts.target, 'utf8');
+    } catch {
+      existing = '';
+    }
+    const result = opts.applyMarkersFn(existing, opts.generated);
+    if (!result.hasMarkers) {
+      core.warning(`No ${opts.markerName} markers found in ${opts.target}; nothing to update.`);
+      return;
+    }
+    if (result.changed && !opts.dryRun) {
+      await writeFile(opts.target, result.content, 'utf8');
+      if (!opts.writtenPaths.includes(opts.target)) {
+        opts.writtenPaths.push(opts.target);
+      }
+    }
+    return;
+  }
+
+  if (opts.dryRun) return;
+  await writeFileEnsured(opts.target, opts.generated);
+  if (!opts.writtenPaths.includes(opts.target)) {
+    opts.writtenPaths.push(opts.target);
+  }
+}
+
+/**
  * Compare the report's findings against the configured severity floor.
  * Severity rank: critical=4, high=3, medium=2, low=1, info=0.
  * An empty `failOn` means "never fail" (returns 'not-evaluated').
@@ -385,4 +545,97 @@ function evaluateFailOn(
     if (SEVERITY_RANK[finding.severity] >= threshold) return 'fail';
   }
   return 'pass';
+}
+
+/**
+ * Post a GitHub Checks API summary for the audit run. Best-effort: never
+ * fails the workflow — most users won't have `permissions: checks: write`
+ * configured initially, so a 403 here just downgrades to a `core.warning`.
+ *
+ * The run target is `GITHUB_SHA`, which is the merge commit on
+ * `pull_request` and the head commit on `push`/`workflow_dispatch`.
+ */
+async function postAuditCheckRun(opts: {
+  token: string;
+  findings: AuditFinding[];
+  summary: AuditReport['summary'];
+  failOnResult: 'pass' | 'fail' | 'not-evaluated';
+}): Promise<void> {
+  const repoEnv = process.env.GITHUB_REPOSITORY;
+  if (!repoEnv) {
+    core.warning('Skipping audit Check Run: GITHUB_REPOSITORY not set.');
+    return;
+  }
+  const [owner, repo] = repoEnv.split('/');
+  if (!owner || !repo) return;
+
+  const headSha = process.env.GITHUB_SHA;
+  if (!headSha) {
+    core.warning('Skipping audit Check Run: GITHUB_SHA not set.');
+    return;
+  }
+
+  // Map fail-on result -> check conclusion. 'not-evaluated' = neutral so
+  // green/red status matches user expectations for an explicit threshold.
+  const conclusion: 'success' | 'neutral' | 'failure' =
+    opts.failOnResult === 'fail' ? 'failure' : opts.failOnResult === 'pass' ? 'success' : 'neutral';
+
+  const summaryMd = renderCheckSummary(opts.findings, opts.summary, opts.failOnResult);
+
+  try {
+    const octokit = getOctokit(opts.token);
+    await octokit.rest.checks.create({
+      owner,
+      repo,
+      head_sha: headSha,
+      name: 'PortfolioCraft Audit',
+      status: 'completed',
+      conclusion,
+      output: {
+        title: `${opts.findings.length} finding(s) - ${conclusion}`,
+        summary: summaryMd,
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    core.warning(
+      `Could not post audit Check Run: ${msg}. Add 'permissions: checks: write' to enable.`,
+    );
+  }
+}
+
+/**
+ * Render the Check Run summary body — totals table + top 10 findings inline
+ * so the GitHub-rendered Check Run page is self-contained without needing
+ * the audit.md artifact.
+ */
+export function renderCheckSummary(
+  findings: AuditFinding[],
+  summary: AuditReport['summary'],
+  failOnResult: string,
+): string {
+  const lines = [
+    `**Total findings:** ${summary.totalFindings}`,
+    ``,
+    `| Severity | Count |`,
+    `| --- | --- |`,
+    `| critical | ${summary.bySeverity.critical ?? 0} |`,
+    `| high | ${summary.bySeverity.high ?? 0} |`,
+    `| medium | ${summary.bySeverity.medium ?? 0} |`,
+    `| low | ${summary.bySeverity.low ?? 0} |`,
+    `| info | ${summary.bySeverity.info ?? 0} |`,
+    ``,
+    `**Fail-on result:** ${failOnResult}`,
+    ``,
+  ];
+  const top = findings.slice(0, 10);
+  if (top.length > 0) {
+    lines.push(`### Top findings`);
+    lines.push(``);
+    for (const f of top) {
+      const repoLabel = f.repo ? `${f.repo.owner}/${f.repo.name}` : '(user-level)';
+      lines.push(`- **[${f.severity}]** \`${f.category}\` - ${f.title} (${repoLabel})`);
+    }
+  }
+  return lines.join('\n');
 }

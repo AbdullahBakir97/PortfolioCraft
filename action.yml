@@ -58,7 +58,7 @@ inputs:
     required: false
     default: 'false'
   mode:
-    description: "What to run: portfolio | audit | both. Default 'portfolio' is backward-compatible with v0.1."
+    description: "What to run: portfolio | audit | both | summary | all. Default 'portfolio' is backward-compatible with v0.1."
     required: false
     default: 'portfolio'
   audit-output-md:
@@ -73,6 +73,30 @@ inputs:
     description: 'Severity threshold that fails the run. Empty disables. Values: low | medium | high | critical.'
     required: false
     default: ''
+  audit-check-run:
+    description: 'Post a GitHub Checks API summary for the audit run. Requires permissions: checks: write on the calling workflow.'
+    required: false
+    default: 'true'
+  summary-format:
+    description: 'What to render in summary phase: cv | uni | case-studies | all.'
+    required: false
+    default: 'all'
+  summary-output-cv:
+    description: 'Path to write the CV-shaped Markdown summary. Empty string to skip.'
+    required: false
+    default: 'summary-cv.md'
+  summary-output-uni:
+    description: 'Path to write the university-application Markdown summary. Empty string to skip.'
+    required: false
+    default: 'summary-uni.md'
+  summary-output-case-studies:
+    description: 'Path to write the project case-studies Markdown. Empty string to skip.'
+    required: false
+    default: 'summary-case-studies.md'
+  summary-projects-max:
+    description: 'Max number of projects included in CV / case-studies. 1-20.'
+    required: false
+    default: '6'
 
 outputs:
   readme-updated:
@@ -93,6 +117,12 @@ outputs:
     description: 'Total number of audit findings.'
   audit-fail-on-result:
     description: 'pass / fail / not-evaluated based on audit-fail-on.'
+  summary-cv-path:
+    description: 'Path of the generated CV Markdown summary, or empty string when not rendered.'
+  summary-uni-path:
+    description: 'Path of the generated university Markdown summary, or empty string when not rendered.'
+  summary-case-studies-path:
+    description: 'Path of the generated case-studies Markdown summary, or empty string when not rendered.'
   commit-sha:
     description: 'SHA of the commit pushed back to the repo when commit=true. Empty string when no commit was made.'
   commit-skipped-reason:
