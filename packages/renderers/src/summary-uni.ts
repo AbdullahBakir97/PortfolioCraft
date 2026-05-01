@@ -105,10 +105,11 @@ function renderOpening(uni: UniSummary): string[] {
 
 function rephraseHeadline(headline: string): string {
   // Lowercase the first letter so it reads naturally after "I'm a/an" and
-  // strip a trailing period if the builder added one. Keep everything else
-  // verbatim — the schema gives the headline a stable shape and we don't
-  // want to second-guess it.
-  const trimmed = headline.trim().replace(/\.+$/, '');
+  // strip trailing dots if the builder added them. Use a non-regex loop —
+  // a /\.+$/ pattern would be polynomial against pathological input
+  // (CodeQL flagged this); slice-while-endsWith is O(n) worst-case.
+  let trimmed = headline.trim();
+  while (trimmed.endsWith('.')) trimmed = trimmed.slice(0, -1);
   if (trimmed.length === 0) return 'developer';
   const first = trimmed.charAt(0).toLowerCase();
   return first + trimmed.slice(1);
