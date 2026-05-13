@@ -26,7 +26,7 @@
     "@react-pdf/renderer": "4.5.1",
     "@resvg/resvg-js": "2.6.2",
     "eta": "3.5.0",
-    "react": "19.2.5",
+    "react": "19.2.6",
     "satori": "0.26.0"
   },
   "devDependencies": {
