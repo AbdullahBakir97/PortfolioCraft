@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
@@ -51,7 +51,7 @@ jobs:
           dry-run: false
 
       - name: Post audit as sticky PR comment
-        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         with:
           header: portfoliocraft-audit
           path: audit.md
